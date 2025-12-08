@@ -14,10 +14,9 @@ const LeaderBoardPage = () => {
       <PageHero
         type="hero"
         title="Leader Board"
-        subtitle={`Here you can view the leader board scores `}
+        subtitle="View top performers and their achievements"
       />
     </section>
   )
 }
-
 export default LeaderBoardPage

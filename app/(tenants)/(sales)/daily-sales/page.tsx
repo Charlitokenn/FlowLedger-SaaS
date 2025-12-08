@@ -4,10 +4,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: {
     template: "%s | FlowLedger",
-    default: "Sales",
+    default: "Daily Sales",
   },
 };
-
 const SalesPage = () => {
   return (
     <section>

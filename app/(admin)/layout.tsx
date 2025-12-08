@@ -6,6 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 import { TenantContextProvider } from "../../lib/context-provider";
 import config from "@/lib/config/app-config";
 import { AdminSidebar } from "@/components/ui/admin-sidebar";
+import { redirect } from "next/navigation";
 
 export default async function TenantLayout({
     children, params
@@ -14,6 +15,11 @@ export default async function TenantLayout({
     params: Promise<{ slug?: string }>;
 }>) {
     const { sessionClaims } = await auth();
+
+    if (!sessionClaims) {
+        //Redirect to login or show error
+        redirect('/sign-in')
+    }
     const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
     const localhost = config.env.apiEndpoint
 
@@ -31,7 +37,7 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims.o.slg}.${localhost}`} />}
+                        {isAdmin && sessionClaims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims?.o?.slg}.${localhost}`} />}
                         <UserButton />
                     </div>
                 </header>

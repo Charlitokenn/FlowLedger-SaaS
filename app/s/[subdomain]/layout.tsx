@@ -5,14 +5,18 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { TenantContextProvider } from "@/lib/context-provider";
+import { redirect } from "next/navigation";
 
 export default async function TenantLayout({
-    children, params
+    children,
 }: Readonly<{
     children: React.ReactNode;
-    params: Promise<{ slug?: string }>;
 }>) {
     const { sessionClaims } = await auth();
+    if (!sessionClaims) {
+        redirect('/sign-in');
+    }
+
     const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
 
     return (

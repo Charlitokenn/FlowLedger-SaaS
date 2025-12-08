@@ -14,8 +14,7 @@ const MessagingPage = () => {
       <PageHero
         type="hero"
         title="Messaging"
-        subtitle={`Here you can send reminder messages to clients and contacts `}
-      />
+        subtitle={`Here you can send reminder messages to clients and contacts`} />
     </section>
   )
 }

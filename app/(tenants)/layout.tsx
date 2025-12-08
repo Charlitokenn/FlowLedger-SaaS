@@ -7,16 +7,21 @@ import { auth } from "@clerk/nextjs/server";
 import { TenantContextProvider } from "../../lib/context-provider";
 import config from "@/lib/config/app-config";
 import { SIDEBAR_MENU_ITEMS } from "@/lib/constants";
+import { redirect } from "next/navigation";
 
 export default async function TenantLayout({
-    children, params
+    children
 }: Readonly<{
     children: React.ReactNode;
-    params: Promise<{ slug?: string }>;
 }>) {
     const { sessionClaims } = await auth();
+    const { sessionClaims } = await auth();
+
+    if (!sessionClaims) {
+        redirect('/sign-in');
+    }
+
     const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
-    const localhost = config.env.apiEndpoint
 
     return (
         <SidebarProvider>
@@ -32,9 +37,7 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims.o.slg}.${localhost}`} />}
-                        <UserButton />
-                    </div>
+                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims.o?.slg}.${config.env.apiEndpoint}`} />}                    </div>
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">

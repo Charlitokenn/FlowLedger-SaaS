@@ -10,7 +10,7 @@ import * as React from "react";
  */
 function useCallbackRef<T extends (...args: never[]) => unknown>(
   callback: T | undefined,
-): T {
+): T | (() => void) {
   const callbackRef = React.useRef(callback);
 
   React.useEffect(() => {

@@ -93,138 +93,6 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
         });
     }, [projectName, acquisitionDate, acquisitionValue, data]);
 
-    const columns = React.useMemo<ColumnDef<Project>[]>(
-        () => [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && "indeterminate")
-                        }
-                        onCheckedChange={(value) =>
-                            table.toggleAllPageRowsSelected(!!value)
-                        }
-                        aria-label="Select all"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                    />
-                ),
-                size: 32,
-                enableSorting: false,
-                enableHiding: false,
-            },
-            {
-                id: "acquisitionDate",
-                accessorKey: "acquisitionDate",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Acquisition Date" />
-                ),
-                cell: ({ cell }) => (
-                    <div>{formatDate(cell.getValue<Project["acquisitionDate"]>())}</div>
-                ),
-                meta: {
-                    label: "Date Filter",
-                    placeholder: "Filter Date...",
-                    variant: "dateRange",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: true,
-                enableHiding: false,
-            },
-            {
-                id: "projectName",
-                accessorKey: "projectName",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Project Name" />
-                ),
-                cell: ({ cell }) => <div>{cell.getValue<Project["projectName"]>()}</div>,
-                meta: {
-                    label: "Project Name",
-                    placeholder: "Search Project...",
-                    variant: "text",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: true,
-                enableHiding: false,
-            },
-            {
-                id: "acquisitionValue",
-                accessorKey: "acquisitionValue",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Acquisition Value" />
-                ),
-                cell: ({ cell }) => {
-                    const acquisitionValue = cell.getValue<Project["acquisitionValue"]>();
-
-                    return (
-                        <div className="flex items-center gap-1">
-                            {currencyNumber(acquisitionValue)}
-                        </div>
-                    );
-                },
-                meta: {
-                    label: "Acquisition Value",
-                    placeholder: "Acquisiton Value...",
-                    variant: "range",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: true,
-                enableHiding: true,
-            },
-            {
-                id: "actions",
-                cell: function Cell() {
-                    return (
-                        <div className="flex flex-row gap-1">
-                            <ReusableSheet
-                                trigger={<Edit className="size-4 cursor-pointer" />}
-                                title="Editing Project"
-                                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<p>This is my form</p>}
-                                saveButtonText="Save Project"
-                            />
-                            <ReusableSheet
-                                trigger={<Eye className="size-4 cursor-pointer" />}
-                                title="Viewing Project"
-                                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<p>This is my form</p>}
-                                saveButtonText="Save Project"
-                                hideFooter={true}
-                            />
-                            <ReusablePopover
-                                trigger={<Trash2Icon className="text-red-700 size-4 rounded p-0.3 cursor-pointer" />}
-                                title="Confirm Delete?"
-                                content={
-                                    <Button
-                                        size='sm'
-                                        className="p-1 cursor-pointer w-full"
-                                        onClick={handleDelete}
-                                        disabled={isDeleting}
-                                    >
-                                        {isDeleting ? <div className="flex gap-2 items-center">Deleting < Loader2 className="animate-spin" /></div> : "Yes, Delete"}
-                                    </Button>
-                                }
-                                popoverClass="text-red-500"
-                            />
-                        </div>
-                    );
-                },
-                size: 32,
-            },
-        ],
-        [],
-    );
-
     const { table } = useDataTable({
         data: filteredData,
         columns,
@@ -323,7 +191,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
 
             showToast({
                 title: "Error Deleting Projects",
-                description: `${error} `,
+                description: error instanceof Error ? error.message : "An unexpected error occurred",
                 variant: "error",
                 showAction: false
             })
@@ -331,6 +199,138 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
             setIsDeleting(false);
         }
     }, [table]);
+
+    const columns = React.useMemo<ColumnDef<Project>[]>(
+        () => [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && "indeterminate")
+                        }
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                    />
+                ),
+                size: 32,
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                id: "acquisitionDate",
+                accessorKey: "acquisitionDate",
+                header: ({ column }: { column: Column<Project, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Acquisition Date" />
+                ),
+                cell: ({ cell }) => (
+                    <div>{formatDate(cell.getValue<Project["acquisitionDate"]>())}</div>
+                ),
+                meta: {
+                    label: "Date Filter",
+                    placeholder: "Filter Date...",
+                    variant: "dateRange",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: true,
+                enableHiding: false,
+            },
+            {
+                id: "projectName",
+                accessorKey: "projectName",
+                header: ({ column }: { column: Column<Project, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Project Name" />
+                ),
+                cell: ({ cell }) => <div>{cell.getValue<Project["projectName"]>()}</div>,
+                meta: {
+                    label: "Project Name",
+                    placeholder: "Search Project...",
+                    variant: "text",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: true,
+                enableHiding: false,
+            },
+            {
+                id: "acquisitionValue",
+                accessorKey: "acquisitionValue",
+                header: ({ column }: { column: Column<Project, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Acquisition Value" />
+                ),
+                cell: ({ cell }) => {
+                    const acquisitionValue = cell.getValue<Project["acquisitionValue"]>();
+
+                    return (
+                        <div className="flex items-center gap-1">
+                            {currencyNumber(acquisitionValue)}
+                        </div>
+                    );
+                },
+                meta: {
+                    label: "Acquisition Value",
+                    placeholder: "Acquisition Value...",
+                    variant: "range",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: true,
+                enableHiding: true,
+            },
+            {
+                id: "actions",
+                cell: function Cell() {
+                    return (
+                        <div className="flex flex-row gap-1">
+                            <ReusableSheet
+                                trigger={<Edit className="size-4 cursor-pointer" />}
+                                title="Editing Project"
+                                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
+                                formContent={<p>This is my form</p>}
+                                saveButtonText="Save Project"
+                            />
+                            <ReusableSheet
+                                trigger={<Eye className="size-4 cursor-pointer" />}
+                                title="Viewing Project"
+                                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
+                                formContent={<p>This is my form</p>}
+                                saveButtonText="Save Project"
+                                hideFooter={true}
+                            />
+                            <ReusablePopover
+                                trigger={<Trash2Icon className="text-red-700 size-4 rounded p-0.3 cursor-pointer" />}
+                                title="Confirm Delete?"
+                                content={
+                                    <Button
+                                        size='sm'
+                                        className="p-1 cursor-pointer w-full"
+                                        onClick={handleDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        {isDeleting ? <div className="flex gap-2 items-center">Deleting < Loader2 className="animate-spin" /></div> : "Yes, Delete"}
+                                    </Button>
+                                }
+                                popoverClass="text-red-500"
+                            />
+                        </div>
+                    );
+                },
+                size: 32,
+            },
+        ],
+        [],
+    );
 
     return (
         <div className="data-table-container">
@@ -354,14 +354,13 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                             {selectedRowsCount} Selected
                             <button
                                 className="-my-[5px] -ms-0.5 -me-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[inherit] p-0 text-foreground/60 transition-[color,box-shadow] outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                aria-label="Delete"
+                                aria-label="Clear selection"
                             >
                                 <ReusableTooltip
                                     trigger={<XIcon size={14} aria-hidden="true" onClick={() => table.resetRowSelection()} />}
                                     tooltip="Clear selection"
                                 />
-                            </button>
-                        </Badge>
+                            </button>                        </Badge>
                         <Separator orientation="vertical" />
                         <ReusableTooltip
                             trigger={<DownloadIcon onClick={handleDownloadCSV} className="text-gray-700 size-5 rounded p-0.3 cursor-pointer" />}

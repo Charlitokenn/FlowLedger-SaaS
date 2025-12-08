@@ -29,7 +29,11 @@ const ContactsPage = async ({ sessionClaims }: { sessionClaims: any }) => {
   ];
 
   if (success) {
-    console.log({ data });
+    if (success) {
+      // Data fetched successfully
+    } else {
+      throw new Error(error || "Failed to fetch contacts");
+    }
   } else {
     throw new Error(error || "Failed to fetch contacts");
   }
@@ -44,9 +48,9 @@ const ContactsPage = async ({ sessionClaims }: { sessionClaims: any }) => {
         buttonText="New Contact"
         dialogTitle="New Contact"
         dialogDescription="Fill out the form below to create a new contact."
-        dialog={<AddContactForm/>}
+        dialog={<AddContactForm />}
       />
-      <ReusableDataTable data={data ?? []} pageCount={10} columns={columns} />     
+      <ReusableDataTable data={data ?? []} pageCount={10} columns={columns} />
     </section>
   )
 }

@@ -14,8 +14,7 @@ const SupplierPaymentsPage = () => {
       <PageHero
         type="hero"
         title="Supplier Payments"
-        subtitle={`Here you can manage all supplier payments `}
-      />
+        subtitle={`Here you can manage all supplier payments`} />
     </section>
   )
 }

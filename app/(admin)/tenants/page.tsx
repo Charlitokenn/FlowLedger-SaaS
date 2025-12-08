@@ -4,6 +4,7 @@ import { GetAllContacts } from '@/lib/actions/tenants/contacts.actions';
 
 const TenantsPage = async () => {
   const { data } = await GetAllContacts()
+
   const columns = [
     {
       id: "fullName",
@@ -21,6 +22,7 @@ const TenantsPage = async () => {
       header: "Id Type",
     },
   ];
+  
   return (
     <section>
       <PageHero
