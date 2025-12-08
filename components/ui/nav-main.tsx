@@ -82,7 +82,10 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton className={pathname === subItem.url ? "bg-primary" : ""} asChild>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.url}
+                          >
                             <a href={subItem.url}>
                               <span>{subItem.title}</span>
                             </a>
@@ -98,7 +101,11 @@ export function NavMain({
 
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton className={pathname === item.url ? "bg-primary" : ""} asChild tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={pathname === item.url}
+              >
                 <a href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

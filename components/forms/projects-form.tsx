@@ -140,6 +140,13 @@ export default function MultiStepForm() {
         }
     };
 
+    // Lightweight "register" helper so we can reuse the shared InputField
+    const register = (fieldName: string, _validation?: any) => ({
+        name: fieldName,
+        value: formData[fieldName as keyof FormData] ?? "",
+        onChange: (e: any) => updateFormData(fieldName as keyof FormData, e.target.value),
+    });
+
     const calculateTotal = () => {
         if (!formData.plan) return 0;
 
@@ -161,17 +168,17 @@ export default function MultiStepForm() {
 
     if (isSubmitted) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="p-4 flex justify-center">
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+                    className="bg-card text-card-foreground border border-border rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
                 >
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Check className="w-10 h-10 text-green-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Thank you!</h2>
-                    <p className="text-gray-600 mb-6">
+                    <h2 className="text-2xl font-bold mb-2">Thank you!</h2>
+                    <p className="text-muted-foreground mb-6">
                         Thanks for confirming your subscription! We hope you have fun using our platform. If you ever need
                         support, please feel free to email us at support@loremgaming.com.
                     </p>
@@ -190,7 +197,7 @@ export default function MultiStepForm() {
                                 customProfile: false,
                             });
                         }}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
                     >
                         Start Over
                     </button>
@@ -200,26 +207,26 @@ export default function MultiStepForm() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-1">
-            <div className="bg-white rounded-xl border-2 shadow-none overflow-hidden max-w-full w-full flex flex-col md:flex-row">
+        <div className="p-1">
+            <div className="bg-card text-card-foreground rounded-xl border border-border shadow-sm overflow-hidden max-w-full w-full flex flex-col md:flex-row">
                 {/* Sidebar */}
-                <div className="bg-primary p-8 md:w-1/4">
+                <div className="bg-primary text-primary-foreground p-8 md:w-1/4">
                     <div className="space-y-6">
                         {steps.map((step) => (
                             <div key={step.id} className="flex items-center space-x-4">
                                 <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${currentStep === step.id
-                                        ? 'bg-white text-indigo-600'
+                                        ? 'bg-primary-foreground text-primary'
                                         : currentStep > step.id
-                                            ? 'bg-indigo-300 text-white'
-                                            : 'border-2 border-white text-white'
+                                            ? 'bg-primary/70 text-primary-foreground'
+                                            : 'border-2 border-primary-foreground text-primary-foreground'
                                         }`}
                                 >
                                     {currentStep > step.id ? <Check className="w-5 h-5" /> : step.id}
                                 </div>
                                 <div className="hidden md:block">
-                                    <p className="text-indigo-200 text-xs uppercase">Step {step.id}</p>
-                                    <p className="text-white font-semibold">{step.name}</p>
+                                    <p className="text-primary-foreground/70 text-xs uppercase">Step {step.id}</p>
+                                    <p className="font-semibold">{step.name}</p>
                                 </div>
                             </div>
                         ))}
@@ -227,7 +234,7 @@ export default function MultiStepForm() {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 p-8 md:p-12 flex flex-col">
+                <div className="flex-1 p-8 md:p-12 flex flex-col bg-background">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentStep}
@@ -237,50 +244,38 @@ export default function MultiStepForm() {
                             transition={{ duration: 0.3 }}
                             className="flex-1"
                         >
-                            <h2 className="text-3xl font-bold text-gray-800 mb-2">{steps[currentStep - 1].name}</h2>
-                            <p className="text-gray-500 mb-8">{steps[currentStep - 1].description}</p>
+                            <h2 className="text-3xl font-bold mb-2">{steps[currentStep - 1].name}</h2>
+                            <p className="text-muted-foreground mb-8">{steps[currentStep - 1].description}</p>
 
                             {/* Step 1: Personal Info */}
                             {currentStep === 1 && (
                                 <div className="space-y-5">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                        <input
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={(e) => updateFormData('name', e.target.value)}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.name ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="e.g. Stephen King"
-                                        />
-                                        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                                    </div>
+                                    <InputField
+                                        name="name"
+                                        label="Name"
+                                        placeholder="e.g. Stephen King"
+                                        type="text"
+                                        register={register}
+                                        error={errors.name ? { message: errors.name } as any : undefined}
+                                    />
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => updateFormData('email', e.target.value)}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.email ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="e.g. stephenking@lorem.com"
-                                        />
-                                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                                    </div>
+                                    <InputField
+                                        name="email"
+                                        label="Email Address"
+                                        placeholder="e.g. stephenking@lorem.com"
+                                        type="email"
+                                        register={register}
+                                        error={errors.email ? { message: errors.email } as any : undefined}
+                                    />
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                        <input
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={(e) => updateFormData('phone', e.target.value)}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.phone ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="e.g. +1 234 567 890"
-                                        />
-                                        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                                    </div>
+                                    <InputField
+                                        name="phone"
+                                        label="Phone Number"
+                                        placeholder="e.g. +1 234 567 890"
+                                        type="tel"
+                                        register={register}
+                                        error={errors.phone ? { message: errors.phone } as any : undefined}
+                                    />
                                 </div>
                             )}
 
@@ -292,33 +287,33 @@ export default function MultiStepForm() {
                                             <button
                                                 key={plan.id}
                                                 onClick={() => updateFormData('plan', plan.id)}
-                                                className={`p-4 border-2 rounded-xl text-left transition-all hover:border-indigo-500 ${formData.plan === plan.id ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
+                                                className={`p-4 border-2 rounded-xl text-left transition-all hover:border-primary ${formData.plan === plan.id ? 'border-primary bg-accent' : 'border-border'
                                                     }`}
                                             >
                                                 <div className="text-3xl mb-3">{plan.icon}</div>
-                                                <h3 className="font-bold text-gray-800">{plan.name}</h3>
-                                                <p className="text-gray-600 text-sm">
+                                                <h3 className="font-bold">{plan.name}</h3>
+                                                <p className="text-muted-foreground text-sm">
                                                     ${formData.billing === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}/
                                                     {formData.billing === 'monthly' ? 'mo' : 'yr'}
                                                 </p>
                                                 {formData.billing === 'yearly' && (
-                                                    <p className="text-indigo-600 text-xs mt-1">2 months free</p>
+                                                    <p className="text-primary text-xs mt-1">2 months free</p>
                                                 )}
                                             </button>
                                         ))}
                                     </div>
-                                    {errors.plan && <p className="text-red-500 text-sm">{errors.plan}</p>}
+                                    {errors.plan && <p className="text-destructive text-sm">{errors.plan}</p>}
 
-                                    <div className="flex items-center justify-center space-x-4 bg-gray-50 rounded-lg p-4">
+                                    <div className="flex items-center justify-center space-x-4 bg-muted rounded-lg p-4">
                                         <span
-                                            className={`font-medium ${formData.billing === 'monthly' ? 'text-gray-800' : 'text-gray-400'
+                                            className={`font-medium ${formData.billing === 'monthly' ? 'text-foreground' : 'text-muted-foreground'
                                                 }`}
                                         >
                                             Monthly
                                         </span>
                                         <button
                                             onClick={() => updateFormData('billing', formData.billing === 'monthly' ? 'yearly' : 'monthly')}
-                                            className={`relative w-12 h-6 rounded-full transition-colors ${formData.billing === 'yearly' ? 'bg-indigo-600' : 'bg-gray-300'
+                                            className={`relative w-12 h-6 rounded-full transition-colors ${formData.billing === 'yearly' ? 'bg-primary' : 'bg-muted'
                                                 }`}
                                         >
                                             <motion.div
@@ -328,7 +323,7 @@ export default function MultiStepForm() {
                                             />
                                         </button>
                                         <span
-                                            className={`font-medium ${formData.billing === 'yearly' ? 'text-gray-800' : 'text-gray-400'
+                                            className={`font-medium ${formData.billing === 'yearly' ? 'text-foreground' : 'text-muted-foreground'
                                                 }`}
                                         >
                                             Yearly
@@ -345,7 +340,7 @@ export default function MultiStepForm() {
                                         return (
                                             <label
                                                 key={addon.id}
-                                                className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-indigo-500 ${formData[addonKey] ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
+                                                className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-primary ${formData[addonKey] ? 'border-primary bg-accent' : 'border-border'
                                                     }`}
                                             >
                                                 <input
@@ -355,10 +350,10 @@ export default function MultiStepForm() {
                                                     className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
                                                 />
                                                 <div className="ml-4 flex-1">
-                                                    <h3 className="font-bold text-gray-800">{addon.name}</h3>
-                                                    <p className="text-gray-500 text-sm">{addon.description}</p>
+                                                    <h3 className="font-bold">{addon.name}</h3>
+                                                    <p className="text-muted-foreground text-sm">{addon.description}</p>
                                                 </div>
-                                                <span className="text-indigo-600 font-medium">
+                                                <span className="text-primary font-medium">
                                                     +${formData.billing === 'monthly' ? addon.monthlyPrice : addon.yearlyPrice}/
                                                     {formData.billing === 'monthly' ? 'mo' : 'yr'}
                                                 </span>
@@ -371,20 +366,20 @@ export default function MultiStepForm() {
                             {/* Step 4: Summary */}
                             {currentStep === 4 && (
                                 <div className="space-y-6">
-                                    <div className="bg-gray-50 rounded-xl p-6">
-                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                                    <div className="bg-muted rounded-xl p-6">
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
                                             <div>
-                                                <h3 className="font-bold text-gray-800">
+                                                <h3 className="font-bold">
                                                     {plans.find((p) => p.id === formData.plan)?.name} ({formData.billing === 'monthly' ? 'Monthly' : 'Yearly'})
                                                 </h3>
                                                 <button
                                                     onClick={() => setCurrentStep(2)}
-                                                    className="text-indigo-600 text-sm underline hover:text-indigo-700"
+                                                    className="text-primary text-sm underline hover:opacity-90"
                                                 >
                                                     Change
                                                 </button>
                                             </div>
-                                            <span className="font-bold text-gray-800">
+                                            <span className="font-bold">
                                                 ${formData.billing === 'monthly'
                                                     ? plans.find((p) => p.id === formData.plan)?.monthlyPrice
                                                     : plans.find((p) => p.id === formData.plan)?.yearlyPrice}
@@ -397,8 +392,8 @@ export default function MultiStepForm() {
                                             if (!formData[addonKey]) return null;
                                             return (
                                                 <div key={addon.id} className="flex items-center justify-between py-3">
-                                                    <span className="text-gray-600">{addon.name}</span>
-                                                    <span className="text-gray-800">
+                                                    <span className="text-muted-foreground">{addon.name}</span>
+                                                    <span className="text-foreground">
                                                         +${formData.billing === 'monthly' ? addon.monthlyPrice : addon.yearlyPrice}/
                                                         {formData.billing === 'monthly' ? 'mo' : 'yr'}
                                                     </span>
@@ -408,8 +403,8 @@ export default function MultiStepForm() {
                                     </div>
 
                                     <div className="flex items-center justify-between px-6">
-                                        <span className="text-gray-600">Total (per {formData.billing === 'monthly' ? 'month' : 'year'})</span>
-                                        <span className="text-2xl font-bold text-indigo-600">
+                                        <span className="text-muted-foreground">Total (per {formData.billing === 'monthly' ? 'month' : 'year'})</span>
+                                        <span className="text-2xl font-bold text-primary">
                                             +${calculateTotal()}/{formData.billing === 'monthly' ? 'mo' : 'yr'}
                                         </span>
                                     </div>
@@ -419,11 +414,11 @@ export default function MultiStepForm() {
                     </AnimatePresence>
 
                     {/* Navigation Buttons */}
-                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
                         {currentStep > 1 ? (
                             <button
                                 onClick={handleBack}
-                                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+                                className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                                 <span>Go Back</span>
@@ -435,7 +430,7 @@ export default function MultiStepForm() {
                         {currentStep < steps.length ? (
                             <Button
                                 onClick={handleNext}
-                                className="flex items-center space-x-2 bg-primary px-6 py-3 rounded-lg cursor-pointer transition-colors ml-auto"
+                                className="flex items-center space-x-2 px-6 py-3 rounded-lg cursor-pointer transition-colors ml-auto"
                             >
                                 <span>Next Step</span>
                                 <ChevronRight className="w-5 h-5" />
@@ -443,7 +438,7 @@ export default function MultiStepForm() {
                         ) : (
                             <Button
                                 onClick={handleSubmit}
-                                className="bg-primary px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors ml-auto"
+                                className="px-6 py-3 rounded-lg ml-auto"
                             >
                                 Confirm
                             </Button>

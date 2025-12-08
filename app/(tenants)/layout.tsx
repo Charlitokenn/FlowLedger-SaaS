@@ -1,13 +1,8 @@
 import { TenantSidebar } from "@/components/ui/tenant-sidebar";
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-// import { TenantContextProvider } from "../../lib/context-provider";
-import { SIDEBAR_MENU_ITEMS } from "@/lib/constants";
 import { redirect } from "next/navigation";
-import config from "@/lib/app-config";
 
 export default async function TenantLayout({
     children
@@ -15,21 +10,21 @@ export default async function TenantLayout({
     children: React.ReactNode;
 }>) {
     const { sessionClaims } = await auth();
-    console.log({ sessionClaims })
+    const claims = sessionClaims as SessionClaims | null;
 
-    if (!sessionClaims) {
+    if (!claims) {
         redirect('/sign-in');
     }
 
-    const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
+    const isAdmin = claims?.o?.rol === 'admin'
 
     return (
         <SidebarProvider>
             <TenantSidebar
-                userName={sessionClaims?.firstName}
-                logo={sessionClaims?.orgLogo}
-                orgName={sessionClaims?.orgName}
-                role={sessionClaims?.o?.rol}
+                userName={claims?.firstName as string | undefined}
+                logo={claims?.orgLogo as string | undefined}
+                orgName={claims?.orgName as string | undefined}
+                role={(claims?.o as { rol?: string })?.rol as string | undefined}
             />
             <SidebarInset>
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background">
@@ -42,9 +37,7 @@ export default async function TenantLayout({
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">
-                    {/* <TenantContextProvider sessionClaims={sessionClaims}> */}
                     {children}
-                    {/* </TenantContextProvider> */}
                 </div>
             </SidebarInset>
         </SidebarProvider>

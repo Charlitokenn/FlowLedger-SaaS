@@ -1,10 +1,6 @@
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { TenantContextProvider } from "../../lib/context-provider";
-import config from "@/lib/config/app-config";
 import { AdminSidebar } from "@/components/ui/admin-sidebar";
 import { redirect } from "next/navigation";
 
@@ -37,15 +33,13 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && sessionClaims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims?.o?.slg}.${localhost}`} />}
+                        {isAdmin && sessionClaims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/admin" />}
                         <UserButton />
                     </div>
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">
-                    <TenantContextProvider sessionClaims={sessionClaims}>
-                        {children}
-                    </TenantContextProvider>
+                    {children}
                 </div>
             </SidebarInset>
         </SidebarProvider>

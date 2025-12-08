@@ -49,7 +49,21 @@ export default clerkMiddleware(async (auth, req) => {
         requestHeaders.set('x-clerk-org-slug', authData.orgSlug);
         requestHeaders.set('x-clerk-org-role', authData.orgRole || 'member');
 
-        // Optional: redirect root of admin host to /admin
+        // Derive role from custom session claims if available, falling back to orgRole.
+        const sessionClaims: any = (authData as any).sessionClaims;
+        const roleFromClaims: string | undefined = sessionClaims?.o?.rol;
+        const effectiveRole = roleFromClaims || authData.orgRole || 'member';
+
+        // Only super_admins can access the admin subdomain.
+        if (effectiveRole !== 'super_admin') {
+            const targetBaseHost = baseHost ?? hostname;
+            const redirectUrl = new URL(url);
+            redirectUrl.hostname = `${authData.orgSlug}.${targetBaseHost}`;
+            redirectUrl.pathname = '/dashboard';
+            return NextResponse.redirect(redirectUrl);
+        }
+
+        // Redirect root of admin host to /admin
         if (url.pathname === '/') {
             const adminUrl = new URL(url);
             adminUrl.pathname = '/admin';
