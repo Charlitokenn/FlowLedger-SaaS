@@ -1,0 +1,44 @@
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import { migrate } from 'drizzle-orm/neon-http/migrator';
+import * as schema from '@/db/tenant-schema';
+
+/**
+ * Set up a new tenant database with schema and migrations
+ */
+export async function setupTenantSchema(connectionString: string) {
+    console.log('🔧 Setting up tenant schema...');
+
+    try {
+        const sql = neon(connectionString);
+        const db = drizzle(sql, { schema });
+
+        // Run migrations
+        await migrate(db, { migrationsFolder: './migrations' });
+
+        console.log('✅ Tenant schema setup completed');
+
+        return db;
+    } catch (error) {
+        console.error('❌ Error setting up tenant schema:', error);
+        throw error;
+    }
+}
+
+/**
+ * Verify tenant database connection
+ */
+export async function verifyTenantConnection(connectionString: string): Promise<boolean> {
+    try {
+        const sql = neon(connectionString);
+        const db = drizzle(sql);
+
+        // Simple query to test connection
+        await sql`SELECT 1`;
+
+        return true;
+    } catch (error) {
+        console.error('Connection verification failed:', error);
+        return false;
+    }
+}

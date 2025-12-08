@@ -1,0 +1,644 @@
+{
+  "id": "f3ab22bd-9557-4c37-a26c-08f94dc303e0",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.contacts": {
+      "name": "contacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mobile_number": {
+          "name": "mobile_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_mobile_number": {
+          "name": "alt_mobile_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gender": {
+          "name": "gender",
+          "type": "gender",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_type": {
+          "name": "contact_type",
+          "type": "contact_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'CLIENT'"
+        },
+        "id_type": {
+          "name": "id_type",
+          "type": "id_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_number": {
+          "name": "id_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "regions": {
+          "name": "regions",
+          "type": "regions",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "districts",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ward": {
+          "name": "ward",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "street": {
+          "name": "street",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_NOK_Name": {
+          "name": "first_NOK_Name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_NOK_Mobile": {
+          "name": "first_NOK_Mobile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_NOK_Relationship": {
+          "name": "first_NOK_Relationship",
+          "type": "relationship",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_NOK_Name": {
+          "name": "second_NOK_Name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_NOK_Mobile": {
+          "name": "second_NOK_Mobile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_NOK_Relationship": {
+          "name": "second_NOK_Relationship",
+          "type": "relationship",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clientPhoto": {
+          "name": "clientPhoto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "contacts_clientPhoto_unique": {
+          "name": "contacts_clientPhoto_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clientPhoto"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.projects": {
+      "name": "projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_name": {
+          "name": "project_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_details": {
+          "name": "project_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acquisition_date": {
+          "name": "acquisition_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sqm_bought": {
+          "name": "sqm_bought",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acquisition_value": {
+          "name": "acquisition_value",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region": {
+          "name": "region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ward": {
+          "name": "ward",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "''"
+        },
+        "project_owner": {
+          "name": "project_owner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "committment_amount": {
+          "name": "committment_amount",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lga_fee": {
+          "name": "lga_fee",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "street": {
+          "name": "street",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tp_number": {
+          "name": "tp_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tp_status": {
+          "name": "tp_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "survey_status": {
+          "name": "survey_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "survey_number": {
+          "name": "survey_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_contract_pdf": {
+          "name": "original_contract_pdf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_name": {
+          "name": "supplier_name",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mwenyekiti_name": {
+          "name": "mwenyekiti_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mwenyekiti_mobile": {
+          "name": "mwenyekiti_mobile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mtendaji_name": {
+          "name": "mtendaji_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mtendaji_mobile": {
+          "name": "mtendaji_mobile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "number_of_plots": {
+          "name": "number_of_plots",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tp_url": {
+          "name": "tp_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "survey_url": {
+          "name": "survey_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.approval_status": {
+      "name": "approval_status",
+      "schema": "public",
+      "values": [
+        "APPROVED",
+        "REJECTED",
+        "PENDING"
+      ]
+    },
+    "public.contact_type": {
+      "name": "contact_type",
+      "schema": "public",
+      "values": [
+        "CLIENT",
+        "LAND_SELLER",
+        "AUDITOR",
+        "ICT SUPPORT",
+        "STATIONERY",
+        "SURVEYOR"
+      ]
+    },
+    "public.districts": {
+      "name": "districts",
+      "schema": "public",
+      "values": [
+        "Meru",
+        "Arusha City",
+        "Arusha",
+        "Karatu",
+        "Longido",
+        "Monduli",
+        "Ngorongoro",
+        "Ilala",
+        "Kinondoni",
+        "Temeke",
+        "Kigamboni",
+        "Ubungo",
+        "Bahi",
+        "Chamwino",
+        "Chemba",
+        "Dodoma",
+        "Kondoa",
+        "Kongwa",
+        "Mpwapwa",
+        "Bukombe",
+        "Chato",
+        "Geita Town",
+        "Mbogwe",
+        "Nyang’hwale",
+        "Iringa",
+        "Kilolo",
+        "Mafinga Town",
+        "Mufindi",
+        "Biharamulo",
+        "Bukoba",
+        "Karagwe",
+        "Kyerwa",
+        "Missenyi",
+        "Muleba",
+        "Ngara",
+        "Mlele",
+        "Mpanda",
+        "Mpanda Town",
+        "Buhigwe",
+        "Kakonko",
+        "Kasulu",
+        "Kasulu Town",
+        "Kibondo",
+        "Kigoma",
+        "Kigoma-Ujiji",
+        "Uvinza",
+        "Hai",
+        "Moshi",
+        "Mwanga",
+        "Rombo",
+        "Same",
+        "Siha",
+        "Chake Chake",
+        "Mkoani",
+        "Kati",
+        "Kusini",
+        "Kilwa",
+        "Lindi",
+        "Liwale",
+        "Nachingwea",
+        "Ruangwa",
+        "Babati Town",
+        "Babati",
+        "Hanang",
+        "Kiteto",
+        "Mbulu",
+        "Simanjiro",
+        "Bunda",
+        "Butiama",
+        "Musoma",
+        "Rorya",
+        "Serengeti",
+        "Tarime",
+        "Busokelo",
+        "Chunya",
+        "Kyela",
+        "Mbarali",
+        "Mbeya City",
+        "Mbeya",
+        "Rungwe",
+        "Magharibi",
+        "Mjini",
+        "Gairo",
+        "Kilombero",
+        "Kilosa",
+        "Morogoro",
+        "Mvomero",
+        "Ulanga",
+        "Malinyi",
+        "Ifakara Township",
+        "Masasi",
+        "Masasi Town",
+        "Mtwara",
+        "Nanyumbu",
+        "Newala",
+        "Tandahimba",
+        "Ilemela",
+        "Kwimba",
+        "Magu",
+        "Misungwi",
+        "Nyamagana",
+        "Sengerema",
+        "Ukerewe",
+        "Ludewa",
+        "Makambako Town",
+        "Makete",
+        "Njombe",
+        "Njombe Town",
+        "Wanging’ombe",
+        "Bagamoyo",
+        "Kibaha",
+        "Kibaha Town",
+        "Kisarawe",
+        "Mafia",
+        "Mkuranga",
+        "Rufiji",
+        "Kalambo",
+        "Nkasi",
+        "Sumbawanga",
+        "Mbinga",
+        "Songea",
+        "Tunduru",
+        "Namtumbo",
+        "Nyasa",
+        "Kahama Town",
+        "Kahama",
+        "Kishapu",
+        "Shinyanga",
+        "Bariadi",
+        "Busega",
+        "Itilima",
+        "Maswa",
+        "Meatu",
+        "Ikungi",
+        "Iramba",
+        "Manyoni",
+        "Mkalama",
+        "Singida",
+        "Ileje",
+        "Mbozi",
+        "Momba",
+        "Songwe",
+        "Igunga",
+        "Kaliua",
+        "Nzega",
+        "Sikonge",
+        "Tabora",
+        "Urambo",
+        "Uyui",
+        "Handeni",
+        "Handeni Town",
+        "Kilindi",
+        "Korogwe Town",
+        "Korogwe",
+        "Lushoto",
+        "Muheza",
+        "Mkinga",
+        "Pangani",
+        "Tanga City"
+      ]
+    },
+    "public.gender": {
+      "name": "gender",
+      "schema": "public",
+      "values": [
+        "MALE",
+        "FEMALE"
+      ]
+    },
+    "public.id_type": {
+      "name": "id_type",
+      "schema": "public",
+      "values": [
+        "NATIONAL_ID",
+        "PASSPORT",
+        "DRIVER_LICENSE",
+        "VOTER_ID"
+      ]
+    },
+    "public.regions": {
+      "name": "regions",
+      "schema": "public",
+      "values": [
+        "Arusha",
+        "Dar es Salaam",
+        "Dodoma",
+        "Geita",
+        "Iringa",
+        "Kagera",
+        "Katavi",
+        "Kigoma",
+        "Kilimanjaro",
+        "Kusini Pemba",
+        "Kusini Unguja",
+        "Lindi",
+        "Manyara",
+        "Mara",
+        "Mbeya",
+        "Mjini Magharibi Zanzibar",
+        "Morogoro",
+        "Mwanza",
+        "Njombe",
+        "Pwani",
+        "Rukwa",
+        "Ruvuma",
+        "Shinyanga",
+        "Simiyu",
+        "Singida",
+        "Songwe",
+        "Tabora",
+        "Tanga"
+      ]
+    },
+    "public.relationship": {
+      "name": "relationship",
+      "schema": "public",
+      "values": [
+        "PARENT",
+        "SIBLING",
+        "SPOUSE",
+        "FRIEND",
+        "OTHER"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
