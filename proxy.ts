@@ -29,12 +29,36 @@ export default clerkMiddleware(async (auth, req) => {
     // Get auth data (Clerk v6 - async)
     const authData = await auth();
 
-    // Allow onboarding routes
+    // Derive role from custom session claims if available, falling back to orgRole.
+    const sessionClaims: any = (authData as any).sessionClaims;
+    const roleFromClaims: string | undefined = sessionClaims?.o?.rol;
+    const effectiveRole = roleFromClaims || authData.orgRole || 'member';
+
+    // Special case: platform super_admins on the admin subdomain
+    // - Do NOT force them through select-organization
+    // - Always land them on /admin instead of /dashboard or onboarding pages
+    if (subdomain === 'admin' && effectiveRole === 'super_admin') {
+        if (
+            url.pathname === '/' ||
+            url.pathname === '/dashboard' ||
+            url.pathname === '/select-organization' ||
+            url.pathname === '/auth/callback'
+        ) {
+            const adminUrl = new URL(url);
+            adminUrl.pathname = '/admin';
+            return NextResponse.redirect(adminUrl);
+        }
+
+        // Already on /admin or another admin route, just continue.
+        return NextResponse.next();
+    }
+
+    // Allow onboarding routes for non-admin or non-super_admin users
     if (isOnboardingRoute(req)) {
         return NextResponse.next();
     }
 
-    // Require organization
+    // Require organization for all other non-public routes
     if (!authData.orgId || !authData.orgSlug) {
         const selectOrgUrl = new URL('/select-organization', url);
         selectOrgUrl.searchParams.set('redirect_url', url.toString());
@@ -48,11 +72,6 @@ export default clerkMiddleware(async (auth, req) => {
         requestHeaders.set('x-clerk-org-id', authData.orgId);
         requestHeaders.set('x-clerk-org-slug', authData.orgSlug);
         requestHeaders.set('x-clerk-org-role', authData.orgRole || 'member');
-
-        // Derive role from custom session claims if available, falling back to orgRole.
-        const sessionClaims: any = (authData as any).sessionClaims;
-        const roleFromClaims: string | undefined = sessionClaims?.o?.rol;
-        const effectiveRole = roleFromClaims || authData.orgRole || 'member';
 
         // Only super_admins can access the admin subdomain.
         if (effectiveRole !== 'super_admin') {

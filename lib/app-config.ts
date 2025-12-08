@@ -1,6 +1,7 @@
 const config = {
     appDetails: {
         name: "Flow Ledger",
+        brand: "FlowLedger",
         supportEmail: "hello@flowledger.com",
         description: "#1 Real Estate Management Software",
         authorName: "Charles Nkonoki",

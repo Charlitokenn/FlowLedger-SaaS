@@ -1,9 +1,6 @@
-import { ReusableAdvancedDataTable, ReusableDataTable } from '@/components/data-table/reusable-data-table';
 import PageHero from '@/components/ui/pageHero'
-import { GetAllContacts } from '@/lib/actions/tenants/contacts.actions';
 
 const TenantsPage = async () => {
-  const { data } = await GetAllContacts()
 
   const columns = [
     {
@@ -22,15 +19,16 @@ const TenantsPage = async () => {
       header: "Id Type",
     },
   ];
-  
+
   return (
     <section>
       <PageHero
         type="hero"
         title="Tenants"
         subtitle={`Here you can view and manage tenants`}
+        sheetContent={undefined}
+        sheetTitle={''}
       />
-      <ReusableAdvancedDataTable data={data ?? []} columns={columns} pageCount={data?.length ?? 0} />
     </section>
 
   )

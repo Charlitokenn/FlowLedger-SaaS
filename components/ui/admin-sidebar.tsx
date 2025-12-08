@@ -25,7 +25,7 @@ import { SIDEBAR_MENU_ITEMS } from '@/lib/constants';
 import { NavMain } from './nav-main';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import config from '@/lib/config/app-config';
+import config from '@/lib/app-config';
 
 interface MenuItemsType {
     title: string

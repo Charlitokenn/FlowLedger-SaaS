@@ -3,6 +3,7 @@ import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { AdminSidebar } from "@/components/ui/admin-sidebar";
 import { redirect } from "next/navigation";
+import config from "@/lib/app-config";
 
 export default async function TenantLayout({
     children, params
@@ -11,21 +12,22 @@ export default async function TenantLayout({
     params: Promise<{ slug?: string }>;
 }>) {
     const { sessionClaims } = await auth();
+    const claims = sessionClaims as SessionClaims | null;
 
-    if (!sessionClaims) {
+    if (!claims) {
         //Redirect to login or show error
         redirect('/sign-in')
     }
-    const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
+    const isAdmin = claims?.o?.rol === 'admin' || claims?.o?.rol === 'super_admin';
     const localhost = config.env.apiEndpoint
 
     return (
         <SidebarProvider>
             <AdminSidebar
-                userName={sessionClaims?.firstName}
-                logo={sessionClaims?.orgLogo}
-                orgName={sessionClaims?.orgName}
-                role={sessionClaims?.o?.rol}
+                userName={claims?.firstName}
+                logo={claims?.orgLogo}
+                orgName={claims?.orgName}
+                role={claims?.o?.rol}
             />
             <SidebarInset>
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background">
@@ -33,7 +35,7 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && sessionClaims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/admin" />}
+                        {isAdmin && claims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/admin" />}
                         <UserButton />
                     </div>
                 </header>
