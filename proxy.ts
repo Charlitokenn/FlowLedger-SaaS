@@ -19,13 +19,6 @@ export default clerkMiddleware(async (auth, req) => {
     const hostname = req.headers.get('host') || '';
     const subdomain = hostname.split('.')[0];
 
-    // DEBUG: Log all requests
-    console.log('[MIDDLEWARE]', {
-        pathname: url.pathname,
-        isPublic: isPublicRoute(req),
-        timestamp: new Date().toISOString(),
-    });
-
     // Allow public routes
     if (isPublicRoute(req)) {
         return NextResponse.next();
