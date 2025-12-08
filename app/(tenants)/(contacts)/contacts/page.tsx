@@ -2,7 +2,6 @@ import { ReusableDataTable } from "@/components/data-table/reusable-data-table";
 import AddContactForm from "@/components/forms/contacts-form";
 import PageHero from "@/components/ui/pageHero";
 import VerticalTabs from "@/components/reusable-vertical-tabs";
-import { GetAllContacts } from "@/lib/actions/tenants/contacts.actions";
 import { BoxIcon, Store, Users } from "lucide-react";
 import { Metadata } from "next";
 
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 const ContactsPage = async ({ sessionClaims }: { sessionClaims: any }) => {
-  const { success, data, error } = await GetAllContacts();
+  // const { success, data, error } = await GetAllContacts();
   const columns = [
     {
       id: "fullName",

@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form"
 import InputField from "./fields/input-field"
 import { Button } from "../ui/button"
-import { CreateContacts } from "@/lib/actions/tenants/contacts.actions"
 import { useToast } from "../toast-context"
 import CustomToast from "../custom-toast"
 import { useState } from "react"
@@ -30,7 +29,7 @@ const AddContactForm = () => {
 
   const onSubmit = async (data: ContactFormData ) => {
     try {
-        const {data: createdContacts} = await CreateContacts([data])
+        // const {data: createdContacts} = await CreateContacts([data])
 
       showToast({
         title: "Form submitted!",

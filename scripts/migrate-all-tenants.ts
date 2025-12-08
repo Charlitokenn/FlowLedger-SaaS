@@ -1,10 +1,26 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import { tenants } from '../database/catalog-schema';
 import { setupTenantSchema } from '../lib/tenant-setup';
-import { decrypt } from '../lib/encryption';
-import { catalogDb } from '@/database/drizzle-catalog';
+
+// Load environment variables (including CATALOG_DATABASE_URL and ENCRYPTION_KEY)
+config({ path: resolve(process.cwd(), '.env.local') });
 
 async function migrateAllTenants() {
     console.log('🚀 Starting migration for all tenants...\n');
+
+    if (!process.env.CATALOG_DATABASE_URL) {
+        throw new Error('CATALOG_DATABASE_URL not found in .env.local');
+    }
+
+    // Create catalog DB connection AFTER env is loaded
+    const catalogSql = neon(process.env.CATALOG_DATABASE_URL);
+    const catalogDb = drizzle(catalogSql);
+
+    // Import encryption only after env vars are loaded
+    const { decrypt } = await import('../lib/encryption');
 
     const allTenants = await catalogDb.select().from(tenants);
 

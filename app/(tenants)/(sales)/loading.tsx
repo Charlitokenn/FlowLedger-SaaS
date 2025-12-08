@@ -4,7 +4,7 @@ const loading = () => {
   return (
     <DataTableLoading
       columnCount={5}
-      rowCount={7}
+      rowCount={6}
       filterCount={3}
       cellWidths={["30px", "200px", "200px", "200px", "50px"]}
     />

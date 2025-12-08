@@ -15,7 +15,7 @@ export default async function TenantLayout({
     children: React.ReactNode;
 }>) {
     const { sessionClaims } = await auth();
-    console.log({sessionClaims})
+    console.log({ sessionClaims })
 
     if (!sessionClaims) {
         redirect('/sign-in');
@@ -37,12 +37,13 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl={`${sessionClaims.o?.slg}.${config.env.apiEndpoint}`} />}                    </div>
+                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/dashboard" />}
+                    </div>
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">
                     {/* <TenantContextProvider sessionClaims={sessionClaims}> */}
-                        {children}
+                    {children}
                     {/* </TenantContextProvider> */}
                 </div>
             </SidebarInset>
