@@ -4,10 +4,10 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { TenantContextProvider } from "../../lib/context-provider";
-import config from "@/lib/config/app-config";
+// import { TenantContextProvider } from "../../lib/context-provider";
 import { SIDEBAR_MENU_ITEMS } from "@/lib/constants";
 import { redirect } from "next/navigation";
+import config from "@/lib/app-config";
 
 export default async function TenantLayout({
     children
@@ -15,6 +15,7 @@ export default async function TenantLayout({
     children: React.ReactNode;
 }>) {
     const { sessionClaims } = await auth();
+    console.log({sessionClaims})
 
     if (!sessionClaims) {
         redirect('/sign-in');
@@ -40,9 +41,9 @@ export default async function TenantLayout({
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">
-                    <TenantContextProvider sessionClaims={sessionClaims}>
+                    {/* <TenantContextProvider sessionClaims={sessionClaims}> */}
                         {children}
-                    </TenantContextProvider>
+                    {/* </TenantContextProvider> */}
                 </div>
             </SidebarInset>
         </SidebarProvider>

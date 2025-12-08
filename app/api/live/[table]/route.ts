@@ -1,6 +1,6 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { getTenantDb } from '@/lib/tenant-db';
-import { posts, users, comments } from '@/db/tenant-schema';
+import { posts, users, comments } from '@/database/tenant-schema';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';

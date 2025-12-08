@@ -1,6 +1,5 @@
 "use client";
 
-import { useTenantContext } from "@/lib/context-provider";
 import { Button } from "./button";
 import { Plus } from "lucide-react";
 import ReusableSheet from "../reusable-sheet";
@@ -36,13 +35,13 @@ const PageHero = ({
   hideSheetFooter,
   sheetSizeClass
 }: PageHeroProps) => {
-  const sessionClaims = useTenantContext();
+
 //TODO - ADD a bulk add functionality
   return (
     <div className="flex items-center justify-between gap-4 -mt-3 mb-8">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">
-          {type === "hero" ? title : `Hello ${sessionClaims?.firstName}`}
+          {type === "hero" ? title : `Hello`}
         </h1>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>

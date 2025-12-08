@@ -1,11 +1,11 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
-import { tenants } from '@/db/catalog-schema';
+import { tenants } from '@/database/catalog-schema';
 import { createTenantProject, deleteTenantProject } from '@/lib/neon-api';
 import { setupTenantSchema } from '@/lib/tenant-setup';
 import { encrypt } from '@/lib/encryption';
 import { eq } from 'drizzle-orm';
-import { catalogDb } from '@/db/drizzle-catalog';
+import { catalogDb } from '@/database/drizzle-catalog';
 
 export async function POST(req: Request) {
     const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;

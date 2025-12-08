@@ -1,12 +1,12 @@
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { catalogDb } from './catalog-db';
-import { tenants } from '@/db/catalog-schema';
+import { catalogDb } from '@/database/drizzle-catalog';
+import { tenants } from '@/database/catalog-schema';
 import { eq } from 'drizzle-orm';
 import { createTenantProject } from './neon-api';
 import { setupTenantSchema } from './tenant-setup';
-import * as schema from '@/db/tenant-schema';
-import { encrypt } from './encryption';
+import * as schema from '@/database/tenant-schema';
+import { encrypt, decrypt } from './encryption';
 
 // Connection cache to avoid recreating connections
 const connectionCache = new Map<string, ReturnType<typeof drizzle>>();

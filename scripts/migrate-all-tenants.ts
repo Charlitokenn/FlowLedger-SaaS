@@ -1,7 +1,7 @@
-import { tenants } from '../db/catalog-schema';
+import { tenants } from '../database/catalog-schema';
 import { setupTenantSchema } from '../lib/tenant-setup';
 import { decrypt } from '../lib/encryption';
-import { catalogDb } from '@/db/drizzle-catalog';
+import { catalogDb } from '@/database/drizzle-catalog';
 
 async function migrateAllTenants() {
     console.log('🚀 Starting migration for all tenants...\n');

@@ -1,9 +1,9 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { tenants } from '@/db/catalog-schema';
+import { tenants } from '@/database/catalog-schema';
 import { eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { catalogDb } from '@/db/drizzle-catalog';
+import { catalogDb } from '@/database/drizzle-catalog';
 
 export default async function DashboardPage() {
     const authData = await auth();

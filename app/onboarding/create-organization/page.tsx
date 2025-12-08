@@ -9,10 +9,6 @@ export default function CreateOrganizationPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50">
             <div className="w-full max-w-md">
-                <h1 className="mb-8 text-center text-2xl font-bold text-gray-900">
-                    Create Your Organization
-                </h1>
-
                 <CreateOrganization
                     appearance={{
                         elements: {
@@ -26,7 +22,7 @@ export default function CreateOrganizationPage() {
                 <div className="mt-6 text-center">
                     <button
                         onClick={() => router.back()}
-                        className="text-sm text-gray-600 hover:underline"
+                        className="text-sm text-gray-600 cursor-pointer hover:underline"
                     >
                         ← Go back
                     </button>

@@ -12,7 +12,6 @@ export default function DashboardLayout({
                     <div className="flex items-center gap-4">
                         <h1 className="text-xl font-bold text-gray-900">My SaaS App</h1>
                         <OrganizationSwitcher
-                            hideSlug={false}
                             afterSelectOrganizationUrl="/dashboard"
                             appearance={{
                                 elements: {
@@ -21,7 +20,7 @@ export default function DashboardLayout({
                             }}
                         />
                     </div>
-                    <UserButton afterSignOutUrl="/" />
+                    <UserButton />
                 </div>
             </nav>
             <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>

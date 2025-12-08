@@ -4,7 +4,7 @@ export const SIDEBAR_MENU_ITEMS = {
   TENANTS_MENU: [
     {
       title: "Dashboard",
-      url: "/",
+      url: "/dashboard",
       icon: Gauge,
       isActive: true,
     },

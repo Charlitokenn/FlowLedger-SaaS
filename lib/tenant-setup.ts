@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
-import * as schema from '@/db/tenant-schema';
+import * as schema from '@/database/tenant-schema';
 
 /**
  * Set up a new tenant database with schema and migrations
