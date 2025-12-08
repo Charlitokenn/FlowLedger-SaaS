@@ -1,7 +1,7 @@
 import PageHero from '@/components/ui/pageHero';
 
 export default async function AdminPage() {
-  return (
+
   return (
     <section>
       <PageHero

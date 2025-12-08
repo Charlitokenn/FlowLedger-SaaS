@@ -15,7 +15,6 @@ export default async function TenantLayout({
     children: React.ReactNode;
 }>) {
     const { sessionClaims } = await auth();
-    const { sessionClaims } = await auth();
 
     if (!sessionClaims) {
         redirect('/sign-in');

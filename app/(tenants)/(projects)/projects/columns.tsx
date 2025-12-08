@@ -37,6 +37,94 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const [projectName] = useQueryState("projectName", parseAsString.withDefault(""));
     const [acquisitionDate] = useQueryState("acquisitionDate", parseAsArrayOf(parseAsString).withDefault([]));
     const [acquisitionValue] = useQueryState("acquisitionValue", parseAsArrayOf(parseAsString).withDefault([]));
+    const [isDeleting, setIsDeleting] = React.useState(false);
+
+    const handleDownloadCSV = React.useCallback(() => {
+        const selectedRows = table.getFilteredSelectedRowModel().rows;
+
+        if (selectedRows.length === 0) return;
+
+        const projects = selectedRows.map(row => row.original);
+
+        // Get all keys from the first project and filter out 'isDeleted'
+        const headers = Object.keys(projects[0]).filter(key => key !== 'isDeleted');
+
+        // Convert rows to CSV format
+        const csvRows = projects.map(project => {
+            return headers.map(header => {
+                const value = project[header as keyof Project];
+
+                // Handle different data types
+                if (value === null || value === undefined) {
+                    return '';
+                }
+
+                // Format dates if the field contains 'date' or 'Date'
+                if (header.toLowerCase().includes('date') && typeof value === 'string') {
+                    return `"${formatDate(value)}"`;
+                }
+
+                // Escape and quote string values
+                if (typeof value === 'string') {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+
+                // Return numbers and booleans as-is
+                return value;
+            }).join(",");
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(","), ...csvRows].join("\n");
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", `projects_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = "hidden";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+    }, [table]);
+
+    const handleDelete = React.useCallback(async () => {
+        const selectedRows = table.getFilteredSelectedRowModel().rows;
+        const selectedIds = selectedRows.map(row => row.original.id);
+
+        if (selectedIds.length === 0) return;
+
+        setIsDeleting(true);
+
+        try {
+            await SoftDeleteProjects(selectedIds);
+            //TODO - Fix the toaster loading and move to top right
+            showToast({
+                title: "Delete Successful",
+                description: `${selectedIds.length} Projects have been deleted`,
+                variant: "success",
+                showAction: false
+            })
+            // Clear selection after successful delete
+            table.resetRowSelection();
+        } catch (error) {
+            console.error("Error deleting projects:", error);
+
+            showToast({
+                title: "Error Deleting Projects",
+                description: error instanceof Error ? error.message : "An unexpected error occurred",
+                variant: "error",
+                showAction: false
+            })
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [table]);
 
     const filteredData = React.useMemo<Project[]>(() => {
         if (!data) return [];
@@ -92,113 +180,6 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
             return true;
         });
     }, [projectName, acquisitionDate, acquisitionValue, data]);
-
-    const { table } = useDataTable({
-        data: filteredData,
-        columns,
-        initialState: {
-            sorting: [{ id: "acquisitionDate", desc: false }],
-            columnPinning: { right: ["actions"] },
-            pagination: {
-                pageSize: 6,
-                pageIndex: 0,
-            },
-        },
-        getRowId: (row) => row.id,
-    });
-
-    const selectedRowsCount = table.getFilteredSelectedRowModel().rows.length
-
-    // CSV Download Handler
-    const handleDownloadCSV = React.useCallback(() => {
-        const selectedRows = table.getFilteredSelectedRowModel().rows;
-
-        if (selectedRows.length === 0) return;
-
-        const projects = selectedRows.map(row => row.original);
-
-        // Get all keys from the first project and filter out 'isDeleted'
-        const headers = Object.keys(projects[0]).filter(key => key !== 'isDeleted');
-
-        // Convert rows to CSV format
-        const csvRows = projects.map(project => {
-            return headers.map(header => {
-                const value = project[header as keyof Project];
-
-                // Handle different data types
-                if (value === null || value === undefined) {
-                    return '';
-                }
-
-                // Format dates if the field contains 'date' or 'Date'
-                if (header.toLowerCase().includes('date') && typeof value === 'string') {
-                    return `"${formatDate(value)}"`;
-                }
-
-                // Escape and quote string values
-                if (typeof value === 'string') {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-
-                // Return numbers and booleans as-is
-                return value;
-            }).join(",");
-        });
-
-        // Combine headers and rows
-        const csvContent = [headers.join(","), ...csvRows].join("\n");
-
-        // Create blob and download
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-
-        link.setAttribute("href", url);
-        link.setAttribute("download", `projects_export_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = "hidden";
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-    }, [table]);
-
-    // Delete Handler
-    const [isDeleting, setIsDeleting] = React.useState(false);
-
-    const handleDelete = React.useCallback(async () => {
-        const selectedRows = table.getFilteredSelectedRowModel().rows;
-        const selectedIds = selectedRows.map(row => row.original.id);
-
-        if (selectedIds.length === 0) return;
-
-        setIsDeleting(true);
-
-        try {
-            await SoftDeleteProjects(selectedIds);
-            //TODO - Fix the toaster loading and move to top right
-            showToast({
-                title: "Delete Successful",
-                description: `${selectedIds.length} Projects have been deleted`,
-                variant: "success",
-                showAction: false
-            })
-            // Clear selection after successful delete
-            table.resetRowSelection();
-        } catch (error) {
-            console.error("Error deleting projects:", error);
-
-            showToast({
-                title: "Error Deleting Projects",
-                description: error instanceof Error ? error.message : "An unexpected error occurred",
-                variant: "error",
-                showAction: false
-            })
-        } finally {
-            setIsDeleting(false);
-        }
-    }, [table]);
 
     const columns = React.useMemo<ColumnDef<Project>[]>(
         () => [
@@ -331,6 +312,22 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
         ],
         [],
     );
+
+    const { table } = useDataTable({
+        data: filteredData,
+        columns,
+        initialState: {
+            sorting: [{ id: "acquisitionDate", desc: false }],
+            columnPinning: { right: ["actions"] },
+            pagination: {
+                pageSize: 6,
+                pageIndex: 0,
+            },
+        },
+        getRowId: (row) => row.id,
+    });
+
+    const selectedRowsCount = table.getFilteredSelectedRowModel().rows.length
 
     return (
         <div className="data-table-container">
