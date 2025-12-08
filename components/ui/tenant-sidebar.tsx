@@ -41,7 +41,7 @@ export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link prefetch={false} href="/">
+              <Link prefetch={false} href="/dashboard">
                 <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <LayoutDashboard className="h-5 w-5" />
                   {logo && <Image src={logo} alt={`${orgName} logo`} width={32} height={32} />}
