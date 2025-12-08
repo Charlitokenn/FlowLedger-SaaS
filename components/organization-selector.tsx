@@ -1,10 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { OrganizationMembershipResource } from '@clerk/types';
+
+interface SerializedOrganization {
+    id: string;
+    name: string;
+    slug: string | null;
+    imageUrl: string;
+    role: string;
+}
 
 interface Props {
-    organizations: OrganizationMembershipResource[];
+    organizations: SerializedOrganization[];
 }
 
 export default function OrganizationSelector({ organizations }: Props) {
@@ -34,19 +41,19 @@ export default function OrganizationSelector({ organizations }: Props) {
 
             < div className="space-y-3" >
                 {
-                    organizations.map((membership) => (
+                    organizations.map((org) => (
                         <button
-                            key={membership.organization.id}
-                            onClick={() => handleSelect(membership.organization.slug)}
+                            key={org.id}
+                            onClick={() => handleSelect(org.slug)}
                             className="w-full rounded-lg border border-gray-200 p-4 text-left transition hover:border-blue-500 hover:bg-blue-50"
                         >
                             <div className="flex items-center justify-between" >
                                 <div>
                                     <div className="font-semibold text-gray-900" >
-                                        {membership.organization.name}
+                                        {org.name}
                                     </div>
                                     < div className="text-sm text-gray-500" >
-                                        {membership.role}
+                                        {org.role}
                                     </div>
                                 </div>
                                 < svg

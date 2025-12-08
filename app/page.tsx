@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { UserButton } from '@clerk/nextjs';
 
 export default async function HomePage() {
   const authData = await auth();
@@ -18,7 +19,7 @@ export default async function HomePage() {
         <p className="mb-8 text-xl text-gray-600">
           Multi-tenant platform for your business
         </p>
-
+        <UserButton />
         <div className="flex gap-4 justify-center">
           <Link
             href="/sign-in"

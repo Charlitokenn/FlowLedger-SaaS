@@ -31,8 +31,11 @@ export default async function AuthCallbackPage() {
         // Case 3: Multiple organizations
         redirect('/select-organization');
     } catch (error) {
-        console.error('Auth callback error:', error);
-        redirect('/sign-in');
+        // Only log actual errors, not NEXT_REDIRECT
+        if (error instanceof Error && error.message !== 'NEXT_REDIRECT') {
+            console.error('Auth callback error:', error);
+        }
+        throw error; // Re-throw to let Next.js handle it
     }
 }
 

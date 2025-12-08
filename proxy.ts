@@ -6,7 +6,6 @@ const isPublicRoute = createRouteMatcher([
     '/sign-in(.*)',
     '/sign-up(.*)',
     '/api/webhooks(.*)',
-    '/auth/callback',
 ]);
 
 const isOnboardingRoute = createRouteMatcher([
@@ -24,15 +23,11 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.next();
     }
 
+    // Protect all non-public routes - this ensures auth is loaded
+    await auth.protect();
+
     // Get auth data (Clerk v6 - async)
     const authData = await auth();
-
-    // Require authentication
-    if (!authData.userId) {
-        const signInUrl = new URL('/sign-in', url);
-        signInUrl.searchParams.set('redirect_url', url.toString());
-        return NextResponse.redirect(signInUrl);
-    }
 
     // Allow onboarding routes
     if (isOnboardingRoute(req)) {
@@ -84,11 +79,6 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next({
         request: { headers: requestHeaders },
     });
-}, {
-    authorizedParties: [
-        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        `https://*.${process.env.NEXT_PUBLIC_BASE_DOMAIN || 'localhost'}`,
-    ],
 });
 
 export const config = {

@@ -31,9 +31,18 @@ export default async function SelectOrganizationPage() {
     redirect(`https://${orgSlug}.${baseHost}/dashboard`);
   }
 
+  // Serialize memberships for Client Component
+  const serializedOrgs = memberships.map(membership => ({
+    id: membership.organization.id,
+    name: membership.organization.name,
+    slug: membership.organization.slug,
+    imageUrl: membership.organization.imageUrl,
+    role: membership.role,
+  }));
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <OrganizationSelector organizations={memberships} />
+      <OrganizationSelector organizations={serializedOrgs} />
     </div>
   );
 }

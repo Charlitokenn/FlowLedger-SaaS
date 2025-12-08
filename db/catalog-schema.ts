@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uuid } from 'drizzle-orm/pg-core';
 
 /**
  * Catalog Database Schema
@@ -7,7 +7,7 @@ import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   // Primary identifier (Clerk organization ID)
-  id: text('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   
   // Clerk organization details
   clerkOrgId: text('clerk_org_id').notNull().unique(),
@@ -16,11 +16,11 @@ export const tenants = pgTable('tenants', {
   
   // Neon project details
   neonProjectId: text('neon_project_id').notNull().unique(),
-  neonDatabaseName: text('neon_database_name').notNull(),
+  neonDatabaseName: text('neon_database_name').notNull().default('neondb'),
   connectionString: text('connection_string').notNull(), // Encrypted
   
   // Configuration
-  region: text('region').notNull().default('aws-us-east-2'),
+  region: text('region').notNull().default('aws-us-east-1'),
   isActive: boolean('is_active').notNull().default(true),
   
   // Audit fields
