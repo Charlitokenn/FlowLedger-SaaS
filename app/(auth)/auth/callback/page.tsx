@@ -47,7 +47,8 @@ function getOrganizationUrl(orgSlug: string | null, path: string = '/dashboard')
     const isDev = process.env.NODE_ENV === 'development';
 
     if (isDev) {
-        return `${path}?org=${orgSlug}`;
+        const port = process.env.PORT ?? '3000';
+        return `http://${orgSlug}.localhost:${port}${path}`;
     }
 
     const baseHost = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'localhost';

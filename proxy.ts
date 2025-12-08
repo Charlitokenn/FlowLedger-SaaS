@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { getHostnameParts } from './lib/host-utils';
 
 const isPublicRoute = createRouteMatcher([
     '/',
@@ -15,8 +16,7 @@ const isOnboardingRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
     const url = req.nextUrl;
-    const hostname = req.headers.get('host') || '';
-    const subdomain = hostname.split('.')[0];
+    const { hostname, subdomain, baseHost } = getHostnameParts(req);
 
     // Allow public routes
     if (isPublicRoute(req)) {
@@ -41,36 +41,43 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(selectOrgUrl);
     }
 
-    // Development: Allow any subdomain
-    if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    // Enforce host patterns for all environments (dev and prod)
+    // Admin host: admin.<baseDomain>
+    if (subdomain === 'admin') {
         const requestHeaders = new Headers(req.headers);
         requestHeaders.set('x-clerk-org-id', authData.orgId);
         requestHeaders.set('x-clerk-org-slug', authData.orgSlug);
         requestHeaders.set('x-clerk-org-role', authData.orgRole || 'member');
+
+        // Optional: redirect root of admin host to /admin
+        if (url.pathname === '/') {
+            const adminUrl = new URL(url);
+            adminUrl.pathname = '/admin';
+            return NextResponse.redirect(adminUrl);
+        }
 
         return NextResponse.next({
             request: { headers: requestHeaders },
         });
     }
 
-    // Production: Enforce subdomain routing
-    const baseHost = hostname.split('.').slice(1).join('.');
+    // Root marketing domain: <baseDomain>
+    // For non-public app routes, redirect to the tenant subdomain
+    if (!subdomain) {
+        const redirectUrl = new URL(url);
+        redirectUrl.hostname = `${authData.orgSlug}.${hostname}`;
+        return NextResponse.redirect(redirectUrl);
+    }
 
-    // Redirect from wrong subdomain
-    if (subdomain !== authData.orgSlug && subdomain !== 'app') {
+    // Tenant host: <orgSlug>.<baseDomain>
+    if (subdomain !== authData.orgSlug) {
+        const targetBaseHost = baseHost ?? hostname;
         const correctUrl = new URL(url);
-        correctUrl.hostname = `${authData.orgSlug}.${baseHost}`;
+        correctUrl.hostname = `${authData.orgSlug}.${targetBaseHost}`;
         return NextResponse.redirect(correctUrl);
     }
 
-    // Redirect from app.domain.com to org subdomain
-    if (subdomain === 'app') {
-        const orgUrl = new URL(url);
-        orgUrl.hostname = `${authData.orgSlug}.${baseHost}`;
-        return NextResponse.redirect(orgUrl);
-    }
-
-    // Add tenant context headers
+    // Correct tenant host: add tenant context headers
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-clerk-org-id', authData.orgId);
     requestHeaders.set('x-clerk-org-slug', authData.orgSlug);

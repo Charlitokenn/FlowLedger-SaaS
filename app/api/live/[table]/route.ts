@@ -1,6 +1,5 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { getTenantDb } from '@/lib/tenant-db';
 import { posts, users, comments } from '@/database/tenant-schema';
+import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from '@/lib/tenant-context';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -16,18 +15,13 @@ export async function GET(
     { params }: { params: { table: keyof typeof tableMap } }
 ) {
     try {
-        const authData = await auth();
-
-        if (!authData.userId || !authData.orgId || !authData.orgSlug) {
-            return new Response('Unauthorized', { status: 401 });
-        }
-
         const table = tableMap[params.table];
 
         if (!table) {
             return new Response('Table not found', { status: 404 });
         }
 
+        const { db } = await getTenantDbForRequest();
         const encoder = new TextEncoder();
 
         const stream = new ReadableStream({
@@ -36,17 +30,6 @@ export async function GET(
 
                 const sendUpdate = async () => {
                     try {
-                        const client = await clerkClient();
-                        const org = await client.organizations.getOrganization({
-                            organizationId: authData.orgId!,
-                        });
-
-                        const db = await getTenantDb(
-                            authData.orgId!,
-                            authData.orgSlug!,
-                            org.name
-                        );
-
                         const data = await db.select().from(table);
                         const currentData = JSON.stringify(data);
 
@@ -80,6 +63,9 @@ export async function GET(
             },
         });
     } catch (error) {
+        if (error instanceof Error && error.message === MISSING_TENANT_CONTEXT_ERROR) {
+            return new Response('Unauthorized', { status: 401 });
+        }
         console.error('Live API error:', error);
         return new Response('Internal Server Error', { status: 500 });
     }
