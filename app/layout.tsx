@@ -72,9 +72,62 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
+        cssLayerName: 'clerk',
         elements: {
-          formButtonPrimary: "bg-primary hover:bg-primary-dark text-sm normal-case",
-        },
+          //Organization Switcher Customization
+          organizationSwitcherTrigger: 'dark:text-primary-foreground',
+          organizationSwitcherPopoverFooter: "hidden",
+          organizationSwitcherPopoverCard: "rounded-xl dark:border-1 dark:border-primary-foreground",
+          organizationSwitcherPopoverActions: "dark:bg-secondary dark:text-primary-foreground",
+          organizationSwitcherPopoverActionButton: "dark:text-primary-foreground dark:border-primary-foreground",
+          organizationSwitcherPopoverActionButton__manageOrganization: "dark:text-primary-foreground dark:bg-background",
+          organizationPreview__organizationSwitcherListedOrganization: "dark:text-primary-foreground",
+          organizationSwitcherPreviewButton: "dark:hover:bg-muted-foreground dark:border dark:border-primary-foreground",
+
+          //UserButton Customization
+          userButtonAvatarBox: "dark:border-primary-foreground",
+          userButtonPopoverCard: "rounded-xl dark:border-1 dark:border-primary-foreground",
+          userButtonPopoverActionButton: "dark:bg-secondary dark:text-primary-foreground dark:hover:bg-muted-foreground dark:border dark:border-primary-foreground",
+          userPreviewSecondaryIdentifier: "dark:text-primary-foreground",
+          userButtonPopoverMain: "dark:bg-secondary dark:text-primary-foreground",
+          userButtonPopoverFooter: "hidden",
+
+          //Global Customizations
+          headerTitle: "dark:text-primary-foreground",
+          footer: "hidden",
+          profileSectionTitleText: "dark:text-muted-foreground",
+          organizationPreviewMainIdentifier: "dark:text-primary-foreground",
+          profileSectionPrimaryButton: "dark:border dark:rounded-lg  dark:text-primary-foreground",
+
+          formButtonPrimary: "submit-button",
+          formFieldInput: "input-field",
+          formFieldLabel: "label-field",
+
+          scrollBox: "dark:bg-background",
+
+          tabButton: "dark:text-muted-foreground",
+          notificationBadge: "dark:text-muted-foreground",
+          organizationProfileMembersSearchInput: "dark:bg-muted-foreground dark:text-muted",
+          tableBodyCell: "dark:text-muted-foreground",
+          tableHeaderCell: "dark:text-muted-foreground",
+
+          selectOptionsContainer: "dark:bg-muted-foreground",
+          selectButton: "dark:bg-muted-foreground",
+          selectOption: "dark:text-primary-foreground dark:bg-muted",
+          menuButtonEllipsis: "dark:text-primary-foreground",
+          menuList: "dark:bg-muted",
+
+          modalCloseButton: "dark:text-primary-foreground",
+          cardBox: "dark:bg-secondary",
+          createOrganization: "dark:bg-secondary",
+
+          badge: "dark:text-muted-foreground",
+          activeDeviceListItem: "dark:text-muted-foreground",
+
+          userPreviewMainIdentifierText: "dark:text-primary-foreground",
+          profileSectionItemList: "dark:text-primary-foreground",
+
+        }
       }}
     >
       <html lang="en" suppressHydrationWarning>

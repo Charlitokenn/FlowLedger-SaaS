@@ -6,6 +6,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
+import { Button } from "../ui/button";
 
 // ============================================================================
 // Stepper Components
@@ -282,17 +283,17 @@ export interface FormStep<TSchema extends z.ZodType = z.ZodType> {
   description?: string;
   schema: TSchema;
   fields: FormField[];
+  columns?: 1 | 2 | 3 | 4;
 }
 
 export interface MultiStepFormConfig<TData = Record<string, any>> {
   steps: FormStep[];
   onSubmit: (data: TData) => void | Promise<void>;
   onStepChange?: (step: number, data: Partial<TData>) => void;
+  onComplete?: () => void;
   className?: string;
   submitButtonText?: string;
   submittingButtonText?: string;
-  successTitle?: string;
-  successMessage?: string;
   showStepLabels?: boolean;
   allowNavigateBack?: boolean;
   stepperOrientation?: "horizontal" | "vertical";
@@ -305,21 +306,21 @@ export interface MultiStepFormConfig<TData = Record<string, any>> {
 const cn = (...classes: (string | boolean | undefined)[]) =>
   classes.filter(Boolean).join(" ");
 
-const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "outline";
-}> = ({ className, variant = "default", children, ...props }) => (
-  <button
-    className={cn(
-      "px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
-      variant === "default" && "bg-primary text-white hover:bg-primary-dark focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
-      variant === "outline" && "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </button>
-);
+// const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & {
+//   variant?: "default" | "outline";
+// }> = ({ className, variant = "default", children, ...props }) => (
+//   <button
+//     className={cn(
+//       "px-2 py-1 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
+//       variant === "default" && "bg-primary text-white hover:bg-primary-dark focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
+//       variant === "outline" && "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
+//       className
+//     )}
+//     {...props}
+//   >
+//     {children}
+//   </button>
+// );
 
 const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
   className,
@@ -359,11 +360,10 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   steps,
   onSubmit,
   onStepChange,
+  onComplete,
   className,
   submitButtonText = "Submit",
   submittingButtonText = "Submitting...",
-  successTitle = "Form Submitted!",
-  successMessage = "Thank you for completing the form. We'll be in touch soon.",
   showStepLabels = true,
   allowNavigateBack = true,
   stepperOrientation = "horizontal",
@@ -371,7 +371,6 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<TData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
 
   const currentStepConfig = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
@@ -402,14 +401,15 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
       setIsSubmitting(true);
       try {
         await onSubmit(updatedData as TData);
-        setIsComplete(true);
+        // Call onComplete callback instead of setting isComplete
+        onComplete?.();
       } catch (error) {
         console.error("Form submission error:", error);
       } finally {
         setIsSubmitting(false);
       }
     }
-  }, [currentStep, formData, isLastStep, onSubmit, onStepChange, reset]);
+  }, [currentStep, formData, isLastStep, onSubmit, onStepChange, onComplete, reset]);
 
   const handlePrevStep = useCallback(() => {
     if (currentStep > 0 && allowNavigateBack) {
@@ -421,7 +421,6 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   const handleReset = useCallback(() => {
     setCurrentStep(0);
     setFormData({});
-    setIsComplete(false);
     reset({});
   }, [reset]);
 
@@ -431,28 +430,8 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
     exit: { opacity: 0, x: -50 },
   }), []);
 
-  if (isComplete) {
-    return (
-      <div className={cn("w-full max-w-2xl mx-auto p-6 rounded-lg shadow-lg bg-white", className)}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center py-10"
-        >
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 mb-4">
-            <CheckCircle2 className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2 text-gray-900">{successTitle}</h2>
-          <p className="text-gray-600 mb-6">{successMessage}</p>
-          <Button onClick={handleReset}>Start Over</Button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className={cn("w-full mx-auto p-2 rounded-lg shadow-none", className)}>
+    <div className={cn("w-full mx-auto p-2 mt-3 rounded-lg shadow-none", className)}>
       {/* Stepper */}
       <div className={cn("mb-8", stepperOrientation === "vertical" ? "flex gap-8" : "")}>
         <Stepper
@@ -514,14 +493,24 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
               variants={animationVariants}
               transition={{ duration: 0.3 }}
             >
-              {/* <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900">{currentStepConfig.title}</h2>
-                {currentStepConfig.description && (
-                  <p className="text-sm text-gray-600 mt-1">{currentStepConfig.description}</p>
-                )}
-              </div> */}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+              {stepperOrientation === "vertical" && (
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-primary-foreground">{currentStepConfig.title}</h2>
+                  {currentStepConfig.description && (
+                    <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">{currentStepConfig.description}</p>
+                  )}
+                </div>
+              )}
+              
+              <div className={cn(
+                "grid gap-6",
+                currentStepConfig.columns === 1 && "grid-cols-1",
+                currentStepConfig.columns === 2 && "grid-cols-1 md:grid-cols-2",
+                currentStepConfig.columns === 3 && "grid-cols-1 md:grid-cols-3",
+                currentStepConfig.columns === 4 && "grid-cols-1 md:grid-cols-4",
+                !currentStepConfig.columns && "grid-cols-1 md:grid-cols-2", // default
+                stepperOrientation === "horizontal" ? "mt-10" : "mt-6"
+              )}>
                 {currentStepConfig.fields.map((field) => (
                   <div key={field.name} className="space-y-2">
                     <Label htmlFor={field.name}>{field.label}</Label>
@@ -558,7 +547,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                     onClick={handlePrevStep}
                     disabled={currentStep === 0 || !allowNavigateBack}
                     className={cn(
-                      "flex items-center",
+                      "flex items-center button",
                       (currentStep === 0 || !allowNavigateBack) && "invisible"
                     )}
                   >
