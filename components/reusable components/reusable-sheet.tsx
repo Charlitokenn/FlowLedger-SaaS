@@ -11,8 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Separator } from "./ui/separator";
-import { LucideIcon } from "lucide-react";
+import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
 
 interface Props {

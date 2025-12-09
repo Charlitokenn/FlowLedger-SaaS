@@ -4,7 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "next-themes";
-import { ToastContextProvider } from "@/components/toast-context";
+import { ToastContextProvider } from "@/components/reusable components/toast-context";
 import config from "@/lib/app-config";
 
 const poppins = Poppins({
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     languages: {
       'en-US': '/en-US',
     },
-  },  
+  },
   authors: [
     {
       name: config.appDetails.authorName,
@@ -83,7 +83,7 @@ export default function RootLayout({
             <NuqsAdapter>
               <ToastContextProvider>
                 {children}
-              </ToastContextProvider>              
+              </ToastContextProvider>
             </NuqsAdapter>
           </ThemeProvider>
         </body>

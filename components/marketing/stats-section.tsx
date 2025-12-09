@@ -22,7 +22,7 @@ function StatCard({ label, value, description }: StatProps) {
 
 export function StatsSection() {
   return (
-    <Section id="pricing">
+    <Section id="stats">
       <div className="grid gap-10 md:grid-cols-2 md:items-center">
         <div className="space-y-4">
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">

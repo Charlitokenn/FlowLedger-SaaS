@@ -11,8 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCommonPinningStyles } from "@/lib/data-table";
-import { Library } from "lucide-react";
-import ReusableEmpty from "../reusable-empty";
+import ReusableEmpty from "../reusable components/reusable-empty";
 import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {

@@ -26,11 +26,11 @@ import { currencyNumber, timestampToDateString } from "@/lib/utils";
 import { DataTableActionBar } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/toast-context";
-import ReusableTooltip from "@/components/reusable-tooltip";
+import { useToast } from "@/components/reusable components/toast-context";
+import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
 import { SoftDeleteProjects } from "@/lib/actions/tenants/projects.actions";
-import ReusableSheet from "@/components/reusable-sheet";
-import ReusablePopover from "@/components/reusable-popover";
+import ReusableSheet from "@/components/reusable components/reusable-sheet";
+import ReusablePopover from "@/components/reusable components/reusable-popover";
 
 export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const { showToast } = useToast()

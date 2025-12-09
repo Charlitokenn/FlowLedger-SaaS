@@ -17,18 +17,18 @@ const AuthLayout = ({
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-6xl">
-        {/* Back to marketing site */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Link>
-        </div>
+      {/* Floating back button that does not affect layout height */}
+      <div className="fixed left-4 top-4 z-50">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
+        </Link>
+      </div>
 
+      <div className="w-full max-w-6xl">
         <div className="flex items-center justify-between gap-16">
           {/* Left marketing copy */}
           <section className="flex-1 max-w-xl">

@@ -1,4 +1,4 @@
-import { Popover, PopoverDescription, PopoverPopup, PopoverTitle, PopoverTrigger } from './ui/popover'
+import { Popover, PopoverDescription, PopoverPopup, PopoverTitle, PopoverTrigger } from '../ui/popover'
 
 interface Props {
     trigger: React.ReactNode;

@@ -2,7 +2,7 @@ import PageHero from "@/components/ui/pageHero";
 import { GetAllProjects } from "@/lib/actions/tenants/projects.actions";
 import { Metadata } from "next";
 import { ProjectsTable } from "./columns"
-import MultiStepForm from "@/components/forms/projects-form";
+import { ProjectsForm } from "@/components/forms/projects-form";
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +23,7 @@ const ProjectsPage = async () => {
         showButton
         buttonText="New Project"
         sheetTitle="New project"
-        sheetContent={<MultiStepForm />}
+        sheetContent={<ProjectsForm />}
         hideSheetHeader={true}
         hideSheetFooter={true}
         sheetSaveButtonText="Save Project"
