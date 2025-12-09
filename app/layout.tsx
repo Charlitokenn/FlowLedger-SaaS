@@ -73,7 +73,7 @@ export default function RootLayout({
     <ClerkProvider
       appearance={{
         elements: {
-          formButtonPrimary: "bg-black hover:bg-gray-900 text-sm normal-case",
+          formButtonPrimary: "bg-primary hover:bg-primary-dark text-sm normal-case",
         },
       }}
     >

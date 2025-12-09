@@ -2,7 +2,9 @@
 
 import config from '@/lib/app-config'
 import React from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 
 const AuthLayout = ({
   children,
@@ -14,15 +16,27 @@ const AuthLayout = ({
   const isSignIn = pathname?.includes('sign-in');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-6xl items-center justify-between gap-16">
-        {/* Left marketing copy */}
-        <section className="flex-1 max-w-xl">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-6xl">
+        {/* Back to marketing site */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center justify-between gap-16">
+          {/* Left marketing copy */}
+          <section className="flex-1 max-w-xl">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-            {isSignUp ? 'Sign up to track your finances efficiently.' : 'Log in to track your finances efficiently.'}
+            {isSignUp ? `Sign up to ${config.appDetails.brand} and meet the ease` : 'Log in to track your finances efficiently.'}
           </h1>
           <p className="mt-6 text-base text-slate-500 leading-relaxed">
-            {config.appDetails.brand} lets you keep track of your incomes &amp; outcomes without any hassle.
+            {isSignUp ? `${config.appDetails.brand} is an online software designed to help real estate businesses easily manage their finances.` : `${config.appDetails.brand} lets you keep track of your incomes &amp; outcomes without any hassle.`}
           </p>
         </section>
 
@@ -36,6 +50,7 @@ const AuthLayout = ({
             {children}
           </div>
         </section>
+        </div>
       </div>
     </div>
   )

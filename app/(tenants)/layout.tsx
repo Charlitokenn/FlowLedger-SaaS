@@ -1,6 +1,6 @@
 import { TenantSidebar } from "@/components/ui/tenant-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { OrganizationSwitcher } from "@clerk/nextjs";
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -16,7 +16,7 @@ export default async function TenantLayout({
         redirect('/sign-in');
     }
 
-    const isAdmin = claims?.o?.rol === 'admin'
+    const isAdmin = claims?.o?.rol === 'admin' || claims?.o?.rol === 'super_admin';
 
     return (
         <SidebarProvider>
@@ -33,6 +33,7 @@ export default async function TenantLayout({
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
                         {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/dashboard" />}
+                        <UserButton />
                     </div>
                 </header>
 

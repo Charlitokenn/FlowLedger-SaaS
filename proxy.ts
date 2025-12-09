@@ -4,6 +4,9 @@ import { getHostnameParts } from './lib/host-utils';
 
 const isPublicRoute = createRouteMatcher([
     '/',
+    '/blog',
+    '/features',
+    '/pricing',
     '/sign-in(.*)',
     '/sign-up(.*)',
     '/api/webhooks(.*)',

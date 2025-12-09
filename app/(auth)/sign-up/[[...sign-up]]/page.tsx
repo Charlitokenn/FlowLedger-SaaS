@@ -1,4 +1,3 @@
-import config from '@/lib/app-config'
 import { SignUp } from '@clerk/nextjs'
 
 export default function Page() {
