@@ -1,3 +1,5 @@
+'use client'
+
 import z from "zod";
 import { FormStep, MultiStepForm } from "../reusable components/reusable-multistep-form";
 
@@ -74,7 +76,7 @@ export const ProjectsForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="m-4">
       <MultiStepForm
         steps={steps}
         onSubmit={handleSubmit}

@@ -1,11 +1,268 @@
 "use client"
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
+
+// ============================================================================
+// Stepper Components
+// ============================================================================
+
+type StepperContextValue = {
+  activeStep: number;
+  setActiveStep: (step: number) => void;
+  orientation: "horizontal" | "vertical";
+};
+
+type StepItemContextValue = {
+  step: number;
+  state: StepState;
+  isDisabled: boolean;
+  isLoading: boolean;
+};
+
+type StepState = "active" | "completed" | "inactive" | "loading";
+
+const StepperContext = createContext<StepperContextValue | undefined>(undefined);
+const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
+
+const useStepper = () => {
+  const context = useContext(StepperContext);
+  if (!context) {
+    throw new Error("useStepper must be used within a Stepper");
+  }
+  return context;
+};
+
+const useStepItem = () => {
+  const context = useContext(StepItemContext);
+  if (!context) {
+    throw new Error("useStepItem must be used within a StepperItem");
+  }
+  return context;
+};
+
+interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
+  defaultValue?: number;
+  value?: number;
+  onValueChange?: (value: number) => void;
+  orientation?: "horizontal" | "vertical";
+}
+
+function Stepper({
+  defaultValue = 0,
+  value,
+  onValueChange,
+  orientation = "horizontal",
+  className,
+  ...props
+}: StepperProps) {
+  const [activeStep, setInternalStep] = React.useState(defaultValue);
+
+  const setActiveStep = React.useCallback(
+    (step: number) => {
+      if (value === undefined) {
+        setInternalStep(step);
+      }
+      onValueChange?.(step);
+    },
+    [value, onValueChange],
+  );
+
+  const currentStep = value ?? activeStep;
+
+  return (
+    <StepperContext.Provider
+      value={{
+        activeStep: currentStep,
+        orientation,
+        setActiveStep,
+      }}
+    >
+      <div
+        className={cn(
+          "group/stepper inline-flex data-[orientation=horizontal]:w-full data-[orientation=horizontal]:flex-row data-[orientation=vertical]:flex-col",
+          className,
+        )}
+        data-orientation={orientation}
+        data-slot="stepper"
+        {...props}
+      />
+    </StepperContext.Provider>
+  );
+}
+
+interface StepperItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  step: number;
+  completed?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+function StepperItem({
+  step,
+  completed = false,
+  disabled = false,
+  loading = false,
+  className,
+  children,
+  ...props
+}: StepperItemProps) {
+  const { activeStep } = useStepper();
+
+  const state: StepState =
+    completed || step < activeStep
+      ? "completed"
+      : activeStep === step
+        ? "active"
+        : "inactive";
+
+  const isLoading = loading && step === activeStep;
+
+  return (
+    <StepItemContext.Provider
+      value={{ isDisabled: disabled, isLoading, state, step }}
+    >
+      <div
+        className={cn(
+          "group/step flex items-center group-data-[orientation=horizontal]/stepper:flex-row group-data-[orientation=vertical]/stepper:flex-col",
+          className,
+        )}
+        data-slot="stepper-item"
+        data-state={state}
+        {...(isLoading ? { "data-loading": true } : {})}
+        {...props}
+      >
+        {children}
+      </div>
+    </StepItemContext.Provider>
+  );
+}
+
+interface StepperTriggerProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+function StepperTrigger({
+  asChild = false,
+  className,
+  children,
+  ...props
+}: StepperTriggerProps) {
+  const { setActiveStep } = useStepper();
+  const { step, isDisabled } = useStepItem();
+
+  return (
+    <button
+      className={cn(
+        "inline-flex items-center gap-3 rounded-full outline-none focus-visible:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+        className,
+      )}
+      data-slot="stepper-trigger"
+      disabled={isDisabled}
+      onClick={() => setActiveStep(step)}
+      type="button"
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+interface StepperIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  asChild?: boolean;
+}
+
+function StepperIndicator({
+  asChild = false,
+  className,
+  children,
+  ...props
+}: StepperIndicatorProps) {
+  const { state, step, isLoading } = useStepItem();
+
+  return (
+    <span
+      className={cn(
+        "relative flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-200 font-medium text-gray-600 text-xs data-[state=active]:bg-blue-600 data-[state=completed]:bg-blue-600 data-[state=active]:text-white data-[state=completed]:text-white",
+        className,
+      )}
+      data-slot="stepper-indicator"
+      data-state={state}
+      {...props}
+    >
+      {asChild ? (
+        children
+      ) : (
+        <>
+          <span className="transition-all group-data-[state=completed]/step:scale-0 group-data-loading/step:scale-0 group-data-[state=completed]/step:opacity-0 group-data-loading/step:opacity-0 group-data-loading/step:transition-none">
+            {step}
+          </span>
+          <Check
+            aria-hidden="true"
+            className="absolute scale-0 opacity-0 transition-all group-data-[state=completed]/step:scale-100 group-data-[state=completed]/step:opacity-100"
+            size={16}
+          />
+          {isLoading && (
+            <span className="absolute transition-all">
+              <Loader2
+                aria-hidden="true"
+                className="animate-spin"
+                size={14}
+              />
+            </span>
+          )}
+        </>
+      )}
+    </span>
+  );
+}
+
+function StepperTitle({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3
+      className={cn("font-medium text-sm", className)}
+      data-slot="stepper-title"
+      {...props}
+    />
+  );
+}
+
+function StepperDescription({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p
+      className={cn("text-gray-500 text-sm", className)}
+      data-slot="stepper-description"
+      {...props}
+    />
+  );
+}
+
+function StepperSeparator({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        "m-0.5 bg-gray-200 group-data-[orientation=horizontal]/stepper:h-0.5 group-data-[orientation=vertical]/stepper:h-12 group-data-[orientation=horizontal]/stepper:w-full group-data-[orientation=vertical]/stepper:w-0.5 group-data-[orientation=horizontal]/stepper:flex-1 group-data-[state=completed]/step:bg-blue-600",
+        className,
+      )}
+      data-slot="stepper-separator"
+      {...props}
+    />
+  );
+}
 
 // ============================================================================
 // Type Definitions
@@ -38,13 +295,14 @@ export interface MultiStepFormConfig<TData = Record<string, any>> {
   successMessage?: string;
   showStepLabels?: boolean;
   allowNavigateBack?: boolean;
+  stepperOrientation?: "horizontal" | "vertical";
 }
 
 // ============================================================================
 // Utility Components
 // ============================================================================
 
-const cn = (...classes: (string | boolean | undefined)[]) => 
+const cn = (...classes: (string | boolean | undefined)[]) =>
   classes.filter(Boolean).join(" ");
 
 const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -53,7 +311,7 @@ const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & {
   <button
     className={cn(
       "px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2",
-      variant === "default" && "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
+      variant === "default" && "bg-primary text-white hover:bg-primary-dark focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
       variant === "outline" && "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
       className
     )}
@@ -63,42 +321,34 @@ const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & {
   </button>
 );
 
-const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ 
-  className, 
-  ...props 
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
+  className,
+  ...props
 }) => (
   <input
     className={cn(
-      "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+      "w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
       className
     )}
     {...props}
   />
 );
 
-const Label: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({ 
-  className, 
-  children, 
-  ...props 
+const Label: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({
+  className,
+  children,
+  ...props
 }) => (
   <label
-    className={cn("block text-sm font-medium text-gray-700 mb-1", className)}
+    className={cn("block text-sm font-medium text-gray-700 dark:text-foreground mb-1", className)}
     {...props}
   >
     {children}
   </label>
 );
 
-const Progress: React.FC<{ value: number; className?: string }> = ({ 
-  value, 
-  className 
-}) => (
-  <div className={cn("w-full bg-gray-200 rounded-full overflow-hidden", className)}>
-    <div
-      className="h-full bg-blue-600 transition-all duration-300 ease-out"
-      style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-    />
-  </div>
+const Separator: React.FC<{ className?: string }> = ({ className }) => (
+  <div className={cn("w-full h-px bg-gray-200 dark:bg-primary-foreground", className)} />
 );
 
 // ============================================================================
@@ -116,6 +366,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   successMessage = "Thank you for completing the form. We'll be in touch soon.",
   showStepLabels = true,
   allowNavigateBack = true,
+  stepperOrientation = "horizontal",
 }: MultiStepFormConfig<TData>) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<TData>>({});
@@ -123,7 +374,6 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   const [isComplete, setIsComplete] = useState(false);
 
   const currentStepConfig = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
   const isLastStep = currentStep === steps.length - 1;
 
   const {
@@ -183,7 +433,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
 
   if (isComplete) {
     return (
-      <div className={cn("w-full max-w-md mx-auto p-6 rounded-lg shadow-lg bg-white", className)}>
+      <div className={cn("w-full max-w-2xl mx-auto p-6 rounded-lg shadow-lg bg-white", className)}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -202,156 +452,175 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   }
 
   return (
-    <div className={cn("w-full max-w-md mx-auto p-6 rounded-lg shadow-lg bg-white", className)}>
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">
-            Step {currentStep + 1} of {steps.length}
-          </span>
-          <span className="text-sm font-medium text-gray-700">{Math.round(progress)}%</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Step Indicators */}
-      <div className="flex justify-between mb-8">
-        {steps.map((step, index) => (
-          <div key={step.id} className="flex flex-col items-center flex-1">
-            <div
+    <div className={cn("w-full mx-auto p-2 rounded-lg shadow-none", className)}>
+      {/* Stepper */}
+      <div className={cn("mb-8", stepperOrientation === "vertical" ? "flex gap-8" : "")}>
+        <Stepper
+          value={currentStep}
+          orientation={stepperOrientation}
+          className={stepperOrientation === "vertical" ? "min-w-[200px]" : ""}
+        >
+          {steps.map((step, index) => (
+            <StepperItem
+              key={step.id}
+              step={index + 1}
+              completed={index < currentStep}
+              disabled={index > currentStep}
               className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-                index < currentStep
-                  ? "bg-blue-600 text-white"
-                  : index === currentStep
-                  ? "bg-blue-600 text-white ring-4 ring-blue-100"
-                  : "bg-gray-200 text-gray-600"
+                stepperOrientation === "horizontal" && "not-last:flex-1 max-md:items-start",
+                stepperOrientation === "vertical" && "relative not-last:flex-1 items-start"
               )}
             >
-              {index < currentStep ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
-            </div>
-            {showStepLabels && (
-              <span className="text-xs mt-1 text-gray-600 text-center hidden sm:block max-w-[80px] truncate">
-                {step.title}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Form Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          variants={animationVariants}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900">{currentStepConfig.title}</h2>
-            {currentStepConfig.description && (
-              <p className="text-sm text-gray-600 mt-1">{currentStepConfig.description}</p>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {currentStepConfig.fields.map((field) => (
-              <div key={field.name} className="space-y-2">
-                <Label htmlFor={field.name}>{field.label}</Label>
-                <Input
-                  id={field.name}
-                  type={field.type}
-                  placeholder={field.placeholder}
-                  {...register(field.name)}
-                  className={cn(
-                    errors[field.name] && "border-red-500 focus:ring-red-500"
+              <StepperTrigger
+                className={cn(
+                  "gap-4 rounded",
+                  stepperOrientation === "horizontal" && "max-md:flex-col",
+                  stepperOrientation === "vertical" && "items-start pb-12 last:pb-0"
+                )}
+              >
+                <StepperIndicator />
+                <div className={cn(
+                  stepperOrientation === "horizontal" && "md:-order-1 text-center md:text-left",
+                  stepperOrientation === "vertical" && "mt-0.5 space-y-0.5 px-2 text-left"
+                )}>
+                  {showStepLabels && <StepperTitle>{step.title}</StepperTitle>}
+                  {showStepLabels && step.description && (
+                    <StepperDescription className={stepperOrientation === "horizontal" ? "max-sm:hidden" : ""}>
+                      {step.description}
+                    </StepperDescription>
                   )}
-                  aria-invalid={errors[field.name] ? "true" : "false"}
-                  aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
+                </div>
+              </StepperTrigger>
+              {index < steps.length - 1 && (
+                <StepperSeparator
+                  className={cn(
+                    stepperOrientation === "horizontal" && "max-md:mt-3.5 md:mx-4",
+                    stepperOrientation === "vertical" && "-order-1 -translate-x-1/2 absolute inset-y-0 top-[calc(1.5rem+0.125rem)] left-3 m-0 group-data-[orientation=vertical]/stepper:h-[calc(100%-1.5rem-0.25rem)]"
+                  )}
                 />
-                {field.description && !errors[field.name] && (
-                  <p className="text-xs text-gray-500">{field.description}</p>
-                )}
-                {errors[field.name] && (
-                  <p id={`${field.name}-error`} className="text-sm text-red-600" role="alert">
-                    {errors[field.name]?.message as string}
-                  </p>
-                )}
-              </div>
-            ))}
+              )}
+            </StepperItem>
+          ))}
+        </Stepper>
 
-            <div className="flex justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevStep}
-                disabled={currentStep === 0 || !allowNavigateBack}
-                className={cn((currentStep === 0 || !allowNavigateBack) && "invisible")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button 
-                type="button"
-                onClick={handleSubmit(handleNextStep)} 
-                disabled={isSubmitting}
-              >
-                {isLastStep ? (
-                  isSubmitting ? submittingButtonText : submitButtonText
-                ) : (
-                  <>
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+        {/* Form Content */}
+        <div className={cn(stepperOrientation === "vertical" && "flex-1")}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={animationVariants}
+              transition={{ duration: 0.3 }}
+            >
+              {/* <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900">{currentStepConfig.title}</h2>
+                {currentStepConfig.description && (
+                  <p className="text-sm text-gray-600 mt-1">{currentStepConfig.description}</p>
                 )}
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+              </div> */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+                {currentStepConfig.fields.map((field) => (
+                  <div key={field.name} className="space-y-2">
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <Input
+                      id={field.name}
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      {...register(field.name)}
+                      className={cn(
+                        errors[field.name] && "border-destructive focus:ring-destructive"
+                      )}
+                      aria-invalid={errors[field.name] ? "true" : "false"}
+                      aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
+                    />
+                    {field.description && !errors[field.name] && (
+                      <p className="text-xs text-gray-500">{field.description}</p>
+                    )}
+                    {errors[field.name] && (
+                      <p id={`${field.name}-error`} className="text-xs text-destructive" role="alert">
+                        {errors[field.name]?.message as string}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="fixed bottom-0 left-0 right-0 w-full py-4 px-6">
+                <Separator />
+                <div className="flex justify-between pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevStep}
+                    disabled={currentStep === 0 || !allowNavigateBack}
+                    className={cn(
+                      "flex items-center",
+                      (currentStep === 0 || !allowNavigateBack) && "invisible"
+                    )}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSubmit(handleNextStep)}
+                    disabled={isSubmitting}
+                  >
+                    {isLastStep ? (
+                      isSubmitting ? submittingButtonText : submitButtonText
+                    ) : (
+                      <div className="flex items-center">
+                        Next <ArrowRight className="ml-2 h-4 w-4" />
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ============================================================================
-// Example Usage
+// Demo Usage
 // ============================================================================
 
 const personalInfoSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
 const addressSchema = z.object({
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  zipCode: z.string().min(5, "Zip code must be at least 5 characters"),
+  street: z.string().min(5, "Street address is required"),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State is required"),
+  zip: z.string().min(5, "ZIP code must be at least 5 digits"),
 });
 
 const accountSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
-const exampleSteps: FormStep[] = [
+const formSteps = [
   {
     id: "personal",
     title: "Personal Info",
     description: "Tell us about yourself",
     schema: personalInfoSchema,
     fields: [
-      { name: "firstName", label: "First Name", type: "text", placeholder: "John" },
-      { name: "lastName", label: "Last Name", type: "text", placeholder: "Doe" },
-      { name: "email", label: "Email", type: "email", placeholder: "john.doe@example.com" },
+      { name: "firstName", label: "First Name", type: "text" as const, placeholder: "John" },
+      { name: "lastName", label: "Last Name", type: "text" as const, placeholder: "Doe" },
+      { name: "email", label: "Email", type: "email" as const, placeholder: "john@example.com" },
+      { name: "phone", label: "Phone", type: "tel" as const, placeholder: "+1234567890" },
     ],
   },
   {
@@ -360,43 +629,69 @@ const exampleSteps: FormStep[] = [
     description: "Where do you live?",
     schema: addressSchema,
     fields: [
-      { name: "address", label: "Address", type: "text", placeholder: "123 Main St" },
-      { name: "city", label: "City", type: "text", placeholder: "New York" },
-      { name: "zipCode", label: "Zip Code", type: "text", placeholder: "10001" },
+      { name: "street", label: "Street Address", type: "text" as const, placeholder: "123 Main St" },
+      { name: "city", label: "City", type: "text" as const, placeholder: "New York" },
+      { name: "state", label: "State", type: "text" as const, placeholder: "NY" },
+      { name: "zip", label: "ZIP Code", type: "text" as const, placeholder: "10001" },
     ],
   },
   {
     id: "account",
-    title: "Account Setup",
-    description: "Create your account",
+    title: "Create Account",
+    description: "Set up your credentials",
     schema: accountSchema,
     fields: [
-      { name: "username", label: "Username", type: "text", placeholder: "johndoe" },
-      { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
-      { name: "confirmPassword", label: "Confirm Password", type: "password", placeholder: "••••••••" },
+      { name: "username", label: "Username", type: "text" as const, placeholder: "johndoe" },
+      { name: "password", label: "Password", type: "password" as const, placeholder: "********" },
     ],
   },
 ];
 
-export default function App() {
-  const handleSubmit = async (data: any) => {
-    console.log("Form submitted:", data);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  };
-
-  const handleStepChange = (step: number, data: any) => {
-    console.log(`Step ${step + 1} completed:`, data);
-  };
+export default function Demo() {
+  const [orientation, setOrientation] = useState<"horizontal" | "vertical">("horizontal");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Stepper Orientation</h3>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setOrientation("horizontal")}
+              className={cn(
+                "px-4 py-2 rounded-md font-medium transition-colors",
+                orientation === "horizontal"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              )}
+            >
+              Horizontal
+            </button>
+            <button
+              onClick={() => setOrientation("vertical")}
+              className={cn(
+                "px-4 py-2 rounded-md font-medium transition-colors",
+                orientation === "vertical"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              )}
+            >
+              Vertical
+            </button>
+          </div>
+        </div>
+      </div>
+
       <MultiStepForm
-        steps={exampleSteps}
-        onSubmit={handleSubmit}
-        onStepChange={handleStepChange}
-        showStepLabels={true}
-        allowNavigateBack={true}
+        steps={formSteps}
+        onSubmit={(data) => {
+          console.log("Form submitted:", data);
+          return new Promise((resolve) => setTimeout(resolve, 2000));
+        }}
+        onStepChange={(step, data) => {
+          console.log("Step changed:", step, data);
+        }}
+        stepperOrientation={orientation}
       />
     </div>
   );
