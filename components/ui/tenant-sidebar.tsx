@@ -23,6 +23,7 @@ import { SIDEBAR_MENU_ITEMS } from '@/lib/constants';
 import { NavMain } from './nav-main';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { MoonIcon, SunIcon } from '../icons';
 
 interface Props {
   userName?: string;
@@ -66,7 +67,7 @@ export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
             <SidebarMenuButton
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
-              {theme === 'dark' ? <Sun /> : <Moon />}
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
               <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

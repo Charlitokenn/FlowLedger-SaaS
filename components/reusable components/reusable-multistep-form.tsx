@@ -522,8 +522,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                 {currentStepConfig.fields.map((field) => (
                   <div key={field.name} className="space-y-2">
                     <Label htmlFor={field.name}>{field.label}</Label>
-                        <Input
-                      id={field.name}
+                    <Input id={field.name}
                       type={field.type}
                       placeholder={field.placeholder}
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any

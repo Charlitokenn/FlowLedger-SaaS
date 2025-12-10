@@ -35,7 +35,6 @@ export async function POST(req: Request) {
     // Verify webhook signature
     const wh = new Webhook(WEBHOOK_SECRET);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let evt: any;
 
     try {
