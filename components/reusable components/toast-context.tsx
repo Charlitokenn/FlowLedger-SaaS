@@ -53,7 +53,8 @@ export function ToastContextProvider({ children }: { children: ReactNode }) {
                             autoOpen={true}
                         />
                     ))}
-                <ToastViewport className="top-0 right-0 z-9999" />
+                {/* Positioned by ToastViewport in components/ui/toast.tsx */}
+                <ToastViewport />
             </ToastProvider>
         </ToastContext.Provider>
     )

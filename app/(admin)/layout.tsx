@@ -3,7 +3,7 @@ import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { AdminSidebar } from "@/components/ui/admin-sidebar";
 import { redirect } from "next/navigation";
-import config from "@/lib/app-config";
+import { protocol, rootDomain } from "@/lib/utils";
 
 export default async function TenantLayout({
     children, params
@@ -19,7 +19,6 @@ export default async function TenantLayout({
         redirect('/sign-in')
     }
     const isAdmin = claims?.o?.rol === 'admin' || claims?.o?.rol === 'super_admin';
-    const localhost = config.env.apiEndpoint
 
     return (
         <SidebarProvider>
@@ -36,7 +35,7 @@ export default async function TenantLayout({
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
                         {isAdmin && claims?.o?.slg && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/admin" />}
-                        <UserButton />
+                        <UserButton afterSignOutUrl={`${protocol}://${rootDomain}`} />
                     </div>
                 </header>
 

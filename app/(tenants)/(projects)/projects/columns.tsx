@@ -26,11 +26,13 @@ import { currencyNumber, timestampToDateString } from "@/lib/utils";
 import { DataTableActionBar } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/reusable components/toast-context";
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
 import { SoftDeleteProjects } from "@/lib/actions/tenants/projects.actions";
 import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
+import { ProjectsForm } from "@/components/forms/projects-form";
 
 export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const { showToast } = useToast()
@@ -38,6 +40,8 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const [acquisitionDate] = useQueryState("acquisitionDate", parseAsArrayOf(parseAsString).withDefault([]));
     const [acquisitionValue] = useQueryState("acquisitionValue", parseAsArrayOf(parseAsString).withDefault([]));
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [deletingRowIds, setDeletingRowIds] = React.useState<Set<string>>(new Set());
+    const [hiddenProjectIds, setHiddenProjectIds] = React.useState<Set<string>>(new Set());
 
     const filteredData = React.useMemo<Project[]>(() => {
         if (!data) return [];
@@ -57,6 +61,10 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
         if (isValueRange) valueNumbers.sort((a, b) => a - b);
 
         return data.filter((project: Project) => {
+            // Optimistically hide rows that have been deleted on the client
+            if (hiddenProjectIds.has(project.id)) {
+                return false;
+            }
             // Project name filter
             if (projectName && !project?.projectName.toLowerCase().includes(projectName.toLowerCase())) {
                 return false;
@@ -92,7 +100,50 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
 
             return true;
         });
-    }, [projectName, acquisitionDate, acquisitionValue, data]);
+    }, [projectName, acquisitionDate, acquisitionValue, data, hiddenProjectIds]);
+
+    const handleSingleDelete = React.useCallback(
+        async (id: string) => {
+            // mark this row as pending delete so we can show a skeleton
+            setDeletingRowIds(prev => {
+                const next = new Set(prev);
+                next.add(id);
+                return next;
+            });
+            try {
+                await SoftDeleteProjects([id]);
+                // Optimistically hide this row from the table
+                setHiddenProjectIds(prev => {
+                    const next = new Set(prev);
+                    next.add(id);
+                    return next;
+                });
+                showToast({
+                    title: "Delete Successful",
+                    description: "1 project has been deleted",
+                    variant: "success",
+                    showAction: false,
+                });
+            } catch (error) {
+                console.error("Error deleting project:", error);
+                showToast({
+                    title: "Error Deleting Project",
+                    description:
+                        error instanceof Error ? error.message : "An unexpected error occurred",
+                    variant: "error",
+                    showAction: false,
+                });
+            } finally {
+                // clear pending delete state for this row (it may already be hidden)
+                setDeletingRowIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(id);
+                    return next;
+                });
+            }
+        },
+        [showToast],
+    );
 
     const columns = React.useMemo<ColumnDef<Project>[]>(
         () => [
@@ -127,9 +178,15 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 header: ({ column }: { column: Column<Project, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Acquisition Date" />
                 ),
-                cell: ({ cell }) => (
-                    <div>{formatDate(cell.getValue<Project["acquisitionDate"]>())}</div>
-                ),
+                cell: ({ cell, row }) => {
+                    const project = row.original as Project;
+                    if (deletingRowIds.has(project.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
+                    return (
+                        <div>{formatDate(cell.getValue<Project["acquisitionDate"]>())}</div>
+                    );
+                },
                 meta: {
                     label: "Date Filter",
                     placeholder: "Filter Date...",
@@ -146,7 +203,13 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 header: ({ column }: { column: Column<Project, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Project Name" />
                 ),
-                cell: ({ cell }) => <div>{cell.getValue<Project["projectName"]>()}</div>,
+                cell: ({ cell, row }) => {
+                    const project = row.original as Project;
+                    if (deletingRowIds.has(project.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
+                    return <div>{cell.getValue<Project["projectName"]>()}</div>;
+                },
                 meta: {
                     label: "Project Name",
                     placeholder: "Search Project...",
@@ -163,7 +226,12 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 header: ({ column }: { column: Column<Project, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Acquisition Value" />
                 ),
-                cell: ({ cell }) => {
+                cell: ({ cell, row }) => {
+                    const project = row.original as Project;
+                    if (deletingRowIds.has(project.id)) {
+                        return <Skeleton className="h-6 w-24" />;
+                    }
+
                     const acquisitionValue = cell.getValue<Project["acquisitionValue"]>();
 
                     return (
@@ -184,7 +252,9 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
             },
             {
                 id: "actions",
-                cell: function Cell() {
+                cell: function Cell({ row }) {
+                    const project = row.original as Project;
+
                     return (
                         <div className="flex flex-row gap-1">
                             <ReusableSheet
@@ -202,17 +272,23 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                 saveButtonText="Save Project"
                                 hideFooter={true}
                             />
-                            <ReusablePopover
+                        <ReusablePopover
                                 trigger={<Trash2Icon className="text-red-700 size-4 rounded p-0.3 cursor-pointer" />}
                                 title="Confirm Delete?"
                                 content={
                                     <Button
                                         size='sm'
                                         className="p-1 cursor-pointer w-full"
-                                        onClick={handleDelete}
-                                        disabled={isDeleting}
-                                    >
-                                        {isDeleting ? <div className="flex gap-2 items-center">Deleting < Loader2 className="animate-spin" /></div> : "Yes, Delete"}
+                                        onClick={() => handleSingleDelete(project.id)}
+                                        disabled={deletingRowIds.has(project.id)}
+>
+                                        {deletingRowIds.has(project.id) ? (
+                                            <div className="flex gap-2 items-center">
+                                                Deleting <Loader2 className="animate-spin" />
+                                            </div>
+                                        ) : (
+                                            "Yes, Delete"
+                                        )}
                                     </Button>
                                 }
                                 popoverClass="text-red-500"
@@ -223,7 +299,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 size: 32,
             },
         ],
-        [],
+        [deletingRowIds, handleSingleDelete],
     );
 
     const { table } = useDataTable({
@@ -294,23 +370,35 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
         URL.revokeObjectURL(url);
     }, [table]);
 
-    const handleDelete = React.useCallback(async () => {
+    const handleDelete = React.useCallback(async (ids?: string[]) => {
         const selectedRows = table.getFilteredSelectedRowModel().rows;
-        const selectedIds = selectedRows.map(row => row.original.id);
+        const selectedIds = ids && ids.length > 0 ? ids : selectedRows.map(row => row.original.id);
 
         if (selectedIds.length === 0) return;
+
+        // mark all selected rows as pending delete so we can show skeletons
+        setDeletingRowIds(prev => {
+            const next = new Set(prev);
+            selectedIds.forEach(id => next.add(id));
+            return next;
+        });
 
         setIsDeleting(true);
 
         try {
             await SoftDeleteProjects(selectedIds);
-            //TODO - Fix the toaster loading and move to top right
+            // Optimistically hide all deleted rows from the table
+            setHiddenProjectIds(prev => {
+                const next = new Set(prev);
+                selectedIds.forEach(id => next.add(id));
+                return next;
+            });
             showToast({
                 title: "Delete Successful",
-                description: `${selectedIds.length} Projects have been deleted`,
+                description: `${selectedIds.length} project${selectedIds.length > 1 ? "s" : ""} have been deleted`,
                 variant: "success",
-                showAction: false
-            })
+                showAction: false,
+            });
             // Clear selection after successful delete
             table.resetRowSelection();
         } catch (error) {
@@ -320,12 +408,18 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 title: "Error Deleting Projects",
                 description: error instanceof Error ? error.message : "An unexpected error occurred",
                 variant: "error",
-                showAction: false
-            })
+                showAction: false,
+            });
         } finally {
             setIsDeleting(false);
+            // clear pending delete state for these rows (they may already be hidden)
+            setDeletingRowIds(prev => {
+                const next = new Set(prev);
+                selectedIds.forEach(id => next.delete(id));
+                return next;
+            });
         }
-    }, [table]);
+    }, [table, showToast]);
 
     const selectedRowsCount = table.getFilteredSelectedRowModel().rows.length
 
@@ -340,7 +434,10 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         trigger={<Button className="cursor-pointer"><Plus />New Project</Button>}
                         title="New Project"
                         titleIcon={<Archive className="w-5.5 h-5.5" />}
-                        formContent={<p>This is my form</p>}
+                        hideHeader={true}
+                        hideFooter={true}
+                        popupClass="max-w-full"
+                        formContent={<ProjectsForm />}
                         saveButtonText="Save Project"
                     />
                 }
@@ -366,17 +463,23 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         <ReusableTooltip
                             trigger={
                                 <ReusablePopover
-                                    trigger={<Trash2Icon className="text-red-700 size-5 rounded p-0.3 cursor-pointer" />}
+                                    trigger={<Trash2Icon className="text-destructive size-5 rounded p-0.3 cursor-pointer" />}
                                     title="Confirm Delete?"
                                     description={`Permanently delete ${selectedRowsCount} projects. This action can't be undone`}
                                     content={
                                         <Button
                                             size='sm'
                                             className="px-2 cursor-pointer"
-                                            onClick={handleDelete}
+                                            onClick={() => handleDelete()}
                                             disabled={isDeleting}
                                         >
-                                            {isDeleting ? <div className="flex gap-2 items-center">Deleting < Loader2 className="animate-spin" /></div> : "I'm Sure, Delete!"}
+                                            {isDeleting ? (
+                                                <div className="flex gap-2 items-center">
+                                                    Deleting <Loader2 className="animate-spin" />
+                                                </div>
+                                            ) : (
+                                                "I'm Sure, Delete!"
+                                            )}
                                         </Button>
                                     }
                                     popoverClass="text-red-500"

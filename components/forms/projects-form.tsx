@@ -1,9 +1,10 @@
 'use client'
 
 import z from "zod";
+import { useRef } from "react";
 import { FormStep, MultiStepForm } from "../reusable components/reusable-multistep-form";
-import { toast } from "sonner";
-import CustomToastItem from "../reusable components/custom-toast";
+import { SheetClose } from "@/components/ui/sheet";
+import { useToast } from "@/components/reusable components/toast-context";
 
 const personalInfoSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -54,25 +55,27 @@ const steps: FormStep[] = [
             { name: "zipCode", label: "Zip Code", type: "text", placeholder: "10001" },
         ],
     },
-    // {
-    //     id: "account",
-    //     title: "Account Setup",
-    //     description: "Create your account",
-    //     schema: accountSchema,
-    //     fields: [
-    //         { name: "username", label: "Username", type: "text", placeholder: "johndoe" },
-    //         { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
-    //         { name: "confirmPassword", label: "Confirm Password", type: "password", placeholder: "••••••••" },
-    //     ],
-    // },
+    {
+        id: "account",
+        title: "Account Setup",
+        description: "Create your account",
+        schema: accountSchema,
+        fields: [
+            { name: "username", label: "Username", type: "text", placeholder: "johndoe" },
+            { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
+            { name: "confirmPassword", label: "Confirm Password", type: "password", placeholder: "••••••••" },
+        ],
+    },
 ];
 
 export const ProjectsForm = () => {
+    const { showToast } = useToast();
+    const closeRef = useRef<HTMLButtonElement | null>(null);
+
     const handleSubmit = async (data: any) => {
         console.log("Form submitted:", data);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
-        toast.success("Project created successfully!");
     };
 
     const handleStepChange = (step: number, data: any) => {
@@ -80,16 +83,30 @@ export const ProjectsForm = () => {
     };
 
     return (
-        <MultiStepForm
-            steps={steps}
-            onSubmit={handleSubmit}
-            onStepChange={handleStepChange}
-            showStepLabels={true}
-            allowNavigateBack={true}
-            stepperOrientation="vertical"
-            onComplete={() => {
-                toast.success("Project created successfully!");
-            }}
-        />
+        <>
+            {/* Hidden close button hooked into the current Sheet context */}
+            <SheetClose render={<button ref={closeRef} className="hidden" />} />
+
+            <MultiStepForm
+                steps={steps}
+                onSubmit={handleSubmit}
+                onStepChange={handleStepChange}
+                showStepLabels={true}
+                allowNavigateBack={true}
+                stepperOrientation="vertical"
+                onComplete={() => {
+                    // Show custom toast via ToastContext
+                    showToast({
+                        title: "Project created",
+                        description: "Your project has been created successfully.",
+                        variant: "success",
+                        showAction: false,
+                    });
+
+                    // Close the enclosing Sheet dialog
+                    closeRef.current?.click();
+                }}
+            />
+        </>
     );
-}
+};

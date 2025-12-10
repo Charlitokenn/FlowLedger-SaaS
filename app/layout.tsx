@@ -101,7 +101,7 @@ export default function RootLayout({
 
           formButtonPrimary: "submit-button",
           formFieldInput: "input-field",
-          formFieldLabel: "label-field",
+          formFieldLabel: "input-label",
 
           scrollBox: "dark:bg-background",
 

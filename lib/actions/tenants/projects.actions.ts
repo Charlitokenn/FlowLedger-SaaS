@@ -3,6 +3,7 @@
 import { projects } from "@/database/tenant-schema";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
 import { eq, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 export const GetAllProjects = async () => {
     try {
@@ -37,6 +38,9 @@ export const SoftDeleteProjects = async (ids: string[]) => {
             .set({ isDeleted: true })
             .where(inArray(projects.id, ids))
             .returning();
+        // Revalidate the projects page route so deleted records disappear
+        revalidatePath("/projects");
+        return { success: true, data: results };
 
         return { success: true, data: results };
     } catch (error) {

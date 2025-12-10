@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 
 // ============================================================================
@@ -418,12 +418,6 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
     }
   }, [currentStep, formData, reset, allowNavigateBack]);
 
-  const handleReset = useCallback(() => {
-    setCurrentStep(0);
-    setFormData({});
-    reset({});
-  }, [reset]);
-
   const animationVariants = useMemo(() => ({
     hidden: { opacity: 0, x: 50 },
     visible: { opacity: 1, x: 0 },
@@ -432,8 +426,14 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
 
   return (
     <div className={cn("w-full mx-auto p-2 mt-3 rounded-lg shadow-none", className)}>
-      {/* Stepper */}
-      <div className={cn("mb-8", stepperOrientation === "vertical" ? "flex gap-8" : "")}>
+      {/* Stepper + Form layout */}
+      <div
+        className={cn(
+          "mb-8",
+          stepperOrientation === "vertical" && "flex gap-8",
+        )}
+      >
+        {/* Stepper */}
         <Stepper
           value={currentStep}
           orientation={stepperOrientation}
@@ -482,6 +482,11 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
           ))}
         </Stepper>
 
+        {/* Dotted vertical divider between steps and form when vertical */}
+        {stepperOrientation === "vertical" && (
+          <div className="border-l border-dashed border-muted-foreground/40" />
+        )}
+
         {/* Form Content */}
         <div className={cn(stepperOrientation === "vertical" && "flex-1")}>
           <AnimatePresence mode="wait">
@@ -501,7 +506,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                   )}
                 </div>
               )}
-              
+
               <div className={cn(
                 "grid gap-6",
                 currentStepConfig.columns === 1 && "grid-cols-1",

@@ -16,8 +16,9 @@ function ToastViewport({
   return (
     <ToastPrimitives.Viewport
       className={cn(
-        "fixed top-0 right-0 z-50 flex max-h-screen w-full flex-col-reverse p-4 sm:top-auto sm:bottom-0 sm:flex-col md:max-w-[400px]",
-        className
+        // Top-right under navbar, stack downward
+        "pointer-events-none fixed top-14 right-6 z-50 flex w-full max-w-[400px] flex-col gap-2 p-0",
+        className,
       )}
       {...props}
     />

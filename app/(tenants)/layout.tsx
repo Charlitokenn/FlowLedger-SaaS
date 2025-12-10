@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { protocol, rootDomain } from "@/lib/utils";
 
 export default async function TenantLayout({
     children
@@ -33,7 +34,7 @@ export default async function TenantLayout({
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
                         {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/dashboard" />}
-                        <UserButton />
+                        <UserButton afterSignOutUrl={`${protocol}://${rootDomain}`} />
                     </div>
                 </header>
 

@@ -7,8 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export const protocol =
   process.env.NODE_ENV === 'production' ? 'https' : 'http';
+
+// Base host (marketing site), without org subdomain.
+// In production prefer NEXT_PUBLIC_BASE_DOMAIN (e.g. "flowledger.com").
+// Fallback to NEXT_PUBLIC_API_ENDPOINT, then localhost:3000 for dev.
 export const rootDomain =
-  process.env.NEXT_PUBLIC_API_ENDPOINT || 'localhost:3000';
+  process.env.NEXT_PUBLIC_BASE_DOMAIN ||
+  process.env.NEXT_PUBLIC_API_ENDPOINT ||
+  'localhost:3000';
 
 export const toProperCase = (text: string | null | undefined) => {
   if (!text) return "";
