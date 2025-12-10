@@ -25,14 +25,26 @@ interface Props {
   hideHeader?: boolean;
   hideFooter?: boolean;
   popupClass?: string;
+  /** Optional id used to programmatically trigger this sheet (e.g. from a dropdown item) */
+  triggerId?: string;
 }
 
 export default function ReusableSheet({
-  trigger, title, description, formContent, isInset = true, saveButtonText, titleIcon, hideHeader, hideFooter, popupClass
+  trigger,
+  title,
+  description,
+  formContent,
+  isInset = true,
+  saveButtonText,
+  titleIcon,
+  hideHeader,
+  hideFooter,
+  popupClass,
+  triggerId,
 }: Props) {
   return (
     <Sheet>
-      <SheetTrigger render={<button />}>
+      <SheetTrigger render={<button data-sheet-trigger-id={triggerId} />}>
         {trigger}
       </SheetTrigger>
       <SheetPopup inset={isInset} className={cn("p-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]", popupClass)}>        <SheetHeader hidden={hideHeader}>

@@ -40,9 +40,9 @@ export const SoftDeleteProjects = async (ids: string[]) => {
             .returning();
         // Revalidate the projects page route so deleted records disappear
         revalidatePath("/projects");
-        return { success: true, data: results };
 
         return { success: true, data: results };
+        
     } catch (error) {
         console.error("Error deleting projects:", error);
         return {

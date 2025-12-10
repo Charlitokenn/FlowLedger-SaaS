@@ -7,6 +7,7 @@ import {
     Edit,
     Eye,
     Loader2,
+    MoreHorizontal,
     Plus,
     SquarePen,
     Text,
@@ -33,6 +34,9 @@ import { SoftDeleteProjects } from "@/lib/actions/tenants/projects.actions";
 import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
 import { ProjectsForm } from "@/components/forms/projects-form";
+import { Project } from "@/database/tenant-schema";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DeleteIcon, EditIcon, ViewIcon } from "@/components/icons";
 
 export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const { showToast } = useToast()
@@ -86,8 +90,15 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
 
             // Acquisition value filter
             if (hasValueFilter) {
-                const projectValue = project?.acquisitionValue;
-                if (projectValue == null) return false;
+                const rawProjectValue = project?.acquisitionValue;
+                if (rawProjectValue == null) return false;
+
+                // Drizzle numeric fields are typically strings; convert to number for comparison
+                const projectValue = Number(rawProjectValue);
+
+                if (Number.isNaN(projectValue)) {
+                    return false;
+                }
 
                 if (isValueRange) {
                     if (!(projectValue >= valueNumbers[0] && projectValue <= valueNumbers[1])) {
@@ -183,9 +194,10 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                     if (deletingRowIds.has(project.id)) {
                         return <Skeleton className="h-6 w-28" />;
                     }
-                    return (
-                        <div>{formatDate(cell.getValue<Project["acquisitionDate"]>())}</div>
-                    );
+
+                    const rawDate = cell.getValue<Project["acquisitionDate"]>();
+                    // rawDate can be string | null; formatDate accepts string | number | Date | undefined
+                    return <div>{formatDate(rawDate ?? undefined)}</div>;
                 },
                 meta: {
                     label: "Date Filter",
@@ -232,11 +244,18 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         return <Skeleton className="h-6 w-24" />;
                     }
 
-                    const acquisitionValue = cell.getValue<Project["acquisitionValue"]>();
+                    const rawValue = cell.getValue<Project["acquisitionValue"]>();
+
+                    // Drizzle numeric fields are usually string | null; currencyNumber expects a number
+                    if (rawValue == null) {
+                        return <div className="flex items-center gap-1">-</div>;
+                    }
+
+                    const numericValue = Number(rawValue);
 
                     return (
                         <div className="flex items-center gap-1">
-                            {currencyNumber(acquisitionValue)}
+                            {currencyNumber(numericValue)}
                         </div>
                     );
                 },
@@ -254,26 +273,33 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 id: "actions",
                 cell: function Cell({ row }) {
                     const project = row.original as Project;
+                    const editTriggerId = `project-edit-${project.id}`;
+                    const viewTriggerId = `project-view-${project.id}`;
+                    const deleteTriggerId = `project-delete-${project.id}`;
 
                     return (
-                        <div className="flex flex-row gap-1">
+                        <div className="flex flex-row">
+                            {/* Hidden sheet triggers live outside the dropdown so they aren't unmounted when the menu closes */}
                             <ReusableSheet
-                                trigger={<Edit className="size-4 cursor-pointer" />}
+                                triggerId={editTriggerId}
+                                trigger={<span className="hidden" />}
                                 title="Editing Project"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
                                 formContent={<p>This is my form</p>}
                                 saveButtonText="Save Project"
                             />
                             <ReusableSheet
-                                trigger={<Eye className="size-4 cursor-pointer" />}
+                                triggerId={viewTriggerId}
+                                trigger={<span className="hidden" />}
                                 title="Viewing Project"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
                                 formContent={<p>This is my form</p>}
                                 saveButtonText="Save Project"
                                 hideFooter={true}
                             />
-                        <ReusablePopover
-                                trigger={<Trash2Icon className="text-red-700 size-4 rounded p-0.3 cursor-pointer" />}
+                            <ReusablePopover
+                                triggerId={deleteTriggerId}
+                                trigger={<span className="hidden" />}
                                 title="Confirm Delete?"
                                 content={
                                     <Button
@@ -281,7 +307,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                         className="p-1 cursor-pointer w-full"
                                         onClick={() => handleSingleDelete(project.id)}
                                         disabled={deletingRowIds.has(project.id)}
->
+                                    >
                                         {deletingRowIds.has(project.id) ? (
                                             <div className="flex gap-2 items-center">
                                                 Deleting <Loader2 className="animate-spin" />
@@ -291,8 +317,55 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                         )}
                                     </Button>
                                 }
-                                popoverClass="text-red-500"
+                                popoverClass="text-destructive"
                             />
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreHorizontal />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onSelect={() => {
+                                            const btn = document.querySelector<HTMLButtonElement>(
+                                                `[data-sheet-trigger-id='${editTriggerId}']`,
+                                            );
+                                            btn?.click();
+                                        }}
+                                    >
+                                        <EditIcon className="size-4.5" />
+                                        Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onSelect={() => {
+                                            const btn = document.querySelector<HTMLButtonElement>(
+                                                `[data-sheet-trigger-id='${viewTriggerId}']`,
+                                            );
+                                            btn?.click();
+                                        }}
+                                    >
+                                        <ViewIcon className="size-4.5" />
+                                        View
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="cursor-pointer text-destructive hover:text-destructive!"
+                                        onSelect={() => {
+                                            const btn = document.querySelector<HTMLDivElement>(
+                                                `[data-popover-trigger-id='${deleteTriggerId}']`,
+                                            );
+                                            btn?.click();
+                                        }}
+                                    >
+                                        <DeleteIcon className="size-4.5 text-destructive" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     );
                 },
@@ -482,7 +555,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                             )}
                                         </Button>
                                     }
-                                    popoverClass="text-red-500"
+                                    popoverClass="text-destructive"
                                 />
                             }
                             tooltip={`Delete ${selectedRowsCount} Selected Projects`}

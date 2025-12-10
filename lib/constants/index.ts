@@ -1,27 +1,27 @@
-import { Group, Users, ShoppingCart, Wallet, Archive, Store, MessagesSquare, Gauge, Cog } from "lucide-react";
+import { ArchiveIcon, CartIcon, ClientsIcon, CogIcon, HomeIcon, MessageIcon, StoreIcon, WalletIcon } from "@/components/icons";
 
 export const SIDEBAR_MENU_ITEMS = {
   TENANTS_MENU: [
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: Gauge,
+      icon: HomeIcon,
       isActive: true,
     },
     {
       title: "Contacts",
       url: "/contacts",
-      icon: Users,
+      icon: ClientsIcon,
     },
     {
       title: "Clients",
       url: "/clients",
-      icon: Group,
+      icon: ClientsIcon,
     },
     {
       title: "Sales",
       url: "#",
-      icon: ShoppingCart,
+      icon: CartIcon,
       items: [
         {
           title: "Daily Sales",
@@ -36,7 +36,7 @@ export const SIDEBAR_MENU_ITEMS = {
     {
       title: "Finance",
       url: "#",
-      icon: Wallet,
+      icon: WalletIcon,
       items: [
         {
           title: "Receipts",
@@ -67,7 +67,7 @@ export const SIDEBAR_MENU_ITEMS = {
     {
       title: "Projects",
       url: "#",
-      icon: Archive,
+      icon: ArchiveIcon,
       items: [
         {
           title: "Project List",
@@ -86,7 +86,7 @@ export const SIDEBAR_MENU_ITEMS = {
     {
       title: "Suppliers",
       url: "#",
-      icon: Store,
+      icon: StoreIcon,
       items: [
         {
           title: "Supplier List",
@@ -101,30 +101,30 @@ export const SIDEBAR_MENU_ITEMS = {
     {
       title: "Messaging",
       url: "/messaging",
-      icon: MessagesSquare,
+      icon: MessageIcon,
     },
   ],
   ADMIN_MENU: [
     {
       title: "Dashboard",
       url: "/admin",
-      icon: Gauge,
+      icon: HomeIcon,
       isActive: true,
     },
     {
       title: "Tenants",
       url: "/tenants",
-      icon: Users,
+      icon: ClientsIcon,
     },
     {
       title: "Revenue",
       url: "/revenue",
-      icon: Wallet,
+      icon: WalletIcon,
     },
     {
       title: "Integrations",
       url: "#",
-      icon: Cog,
+      icon: CogIcon,
       items: [
         {
           title: "Bulk SMS",

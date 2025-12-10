@@ -231,11 +231,11 @@ export const contacts = pgTable('contacts', {
 
 export const projects = pgTable('projects', {
     id: uuid('id').primaryKey().defaultRandom(),
-    projectName: text('project_name'),
+    projectName: text('project_name').notNull(),
     projectDetails: text('project_details'),
     acquisitionDate: date('acquisition_date'),
     sqmBought: numeric('sqm_bought'),
-    acquisitionValue: numeric('acquisition_value'),
+    acquisitionValue: numeric('acquisition_value').notNull(),
     region: text('region'),
     district: text('district'),
     ward: text('ward').default(''),
