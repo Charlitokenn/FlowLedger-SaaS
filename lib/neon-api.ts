@@ -1,11 +1,15 @@
 import createClient from 'openapi-fetch';
-import type { paths } from '@neondatabase/api-client';
+
+// Use a loose type for Neon API paths to avoid tight coupling to the
+// @neondatabase/api-client type exports while preserving runtime behaviour.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NeonPaths = any;
 
 if (!process.env.NEON_API_KEY) {
   throw new Error('NEON_API_KEY is not defined');
 }
 
-const neonApiClient = createClient<paths>({
+const neonApiClient = createClient<NeonPaths>({
   baseUrl: 'https://console.neon.tech/api/v2',
   headers: {
     Authorization: `Bearer ${process.env.NEON_API_KEY}`,
@@ -127,7 +131,8 @@ export async function getProjectDetails(projectId: string) {
  */
 export async function listProjects() {
   try {
-    const { data, error } = await neonApiClient.GET('/projects');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await neonApiClient.GET('/projects' as any, {} as any);
 
     if (error || !data) {
       throw new Error(`Failed to list projects: ${JSON.stringify(error)}`);

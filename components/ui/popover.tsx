@@ -6,7 +6,11 @@ import { cn } from "@/lib/utils";
 
 const Popover = PopoverPrimitive.Root;
 
-function PopoverTrigger(props: PopoverPrimitive.Trigger.Props) {
+type PopoverTriggerProps = PopoverPrimitive.Trigger.Props & {
+  asChild?: boolean;
+};
+
+function PopoverTrigger(props: PopoverTriggerProps) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 

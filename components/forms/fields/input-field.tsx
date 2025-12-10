@@ -2,6 +2,19 @@ import { cn } from "@/lib/utils"
 import { Input } from "../../ui/input"
 import { Label } from "../../ui/label"
 
+type FormInputProps = {
+  name: string
+  label: string
+  placeholder?: string
+  type?: string
+  disabled?: boolean
+  value?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: (name: any, options?: any) => any
+  error?: { message?: string }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  validation?: any
+}
 
 const InputField = ({name,label, placeholder, type = 'text', register, error, validation, disabled, value}: FormInputProps) => {
   return (

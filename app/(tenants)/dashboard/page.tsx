@@ -2,6 +2,7 @@ import PageHero from "@/components/ui/pageHero";
 import { getPersonalizedGreeting } from "@/lib/greetings";
 import { auth } from "@clerk/nextjs/server";
 import { Metadata } from "next";
+import type { SessionClaims } from "@/types/auth";
 
 export const metadata: Metadata = {
     title: {
@@ -22,13 +23,10 @@ const DashboardPage = async () => {
                 type="hero"
                 title={greeting}
                 subtitle="Track and manage your financial obligations at a glance"
-                showButton={true}
-                buttonText="Create Reminder"
-                sheetContent={undefined}
-                sheetTitle={""}
+                showButton={false}
             />
         </section>
-    )
-}
+    );
+};
 
 export default DashboardPage

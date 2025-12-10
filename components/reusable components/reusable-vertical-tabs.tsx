@@ -1,9 +1,24 @@
+import { LucideIcon } from "lucide-react";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+
+interface VerticalTabItem {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+  content: React.ReactNode;
+}
+
+interface VerticalTabsProps {
+  tabs: VerticalTabItem[];
+  defaultValue?: string;
+  className?: string;
+  contentClassName?: string;
+}
 
 export default function VerticalTabs({
   tabs,

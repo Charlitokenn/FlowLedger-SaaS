@@ -11,13 +11,13 @@ const config = {
             url: "https://flowledger.com",
             title: "Flow Ledger",
             description: "#1 Real Estate Management Software",
-            siteName: "Flow Ledger",            
+            siteName: "Flow Ledger",
         },
         twitter: {
             title: "Flow Ledger",
             description: "#1 Real Estate Management Software",
             images: [`/og.jpg`],
-            creator: "@flowledger",            
+            creator: "@flowledger",
         },
         icon: {
             icon: "/icon.png",
@@ -31,8 +31,6 @@ const config = {
         upstashRedisUrl: process.env.UPSTASH_REDIS_REST_URL!,
         upstashRedisToken: process.env.UPSTASH_REDIS_REST_TOKEN!,
     },
-
-
 }
 
 export default config;

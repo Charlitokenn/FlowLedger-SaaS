@@ -8,6 +8,19 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+export interface HorizontalTabItem {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+  content: ReactNode;
+}
+
+interface HorizontalTabsProps {
+  tabs: HorizontalTabItem[];
+  defaultValue?: string;
+  className?: string;
+}
+
 export default function HorizontalTabs({
   tabs,
   defaultValue,

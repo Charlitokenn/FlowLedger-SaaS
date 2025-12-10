@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { getHostnameParts } from './lib/host-utils';
+import type { AuthData, SessionClaims } from './types/auth';
 
 const isPublicRoute = createRouteMatcher([
     '/',
@@ -30,10 +31,10 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect();
 
     // Get auth data (Clerk v6 - async)
-    const authData = await auth();
+    const authData = (await auth()) as AuthData;
 
     // Derive role from custom session claims if available, falling back to orgRole.
-    const sessionClaims: any = (authData as any).sessionClaims;
+    const sessionClaims = authData.sessionClaims;
     const roleFromClaims: string | undefined = sessionClaims?.o?.rol;
     const effectiveRole = roleFromClaims || authData.orgRole || 'member';
 

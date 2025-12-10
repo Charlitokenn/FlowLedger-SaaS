@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { AdminSidebar } from "@/components/ui/admin-sidebar";
 import { redirect } from "next/navigation";
 import { protocol, rootDomain } from "@/lib/utils";
+import type { SessionClaims } from "@/types/auth";
 
 export default async function TenantLayout({
     children, params

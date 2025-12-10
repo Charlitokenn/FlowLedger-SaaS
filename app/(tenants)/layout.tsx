@@ -4,6 +4,7 @@ import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { protocol, rootDomain } from "@/lib/utils";
+import type { SessionClaims } from "@/types/auth";
 
 export default async function TenantLayout({
     children

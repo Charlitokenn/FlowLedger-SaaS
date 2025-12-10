@@ -72,7 +72,9 @@ function Faceted<Multiple extends boolean = false>(
       if (!isControlled) {
         setUncontrolledOpen(newOpen);
       }
-      onOpenChangeProp?.(newOpen);
+      if (onOpenChangeProp) {
+        (onOpenChangeProp as (open: boolean, ...args: unknown[]) => void)(newOpen);
+      }
     },
     [isControlled, onOpenChangeProp],
   );

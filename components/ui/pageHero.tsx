@@ -9,14 +9,15 @@ type PageHeroProps = {
   type: "greeting" | "hero";
   buttonText?: string;
   showButton?: boolean;
-  sheetContent: React.ReactNode
-  sheetTitle: string
-  sheetDescription?: string
-  sheetIcon?: React.ReactNode
-  sheetSaveButtonText?: string
-  hideSheetHeader?: boolean
-  hideSheetFooter?: boolean
-  sheetSizeClass?: string
+  /** Content rendered inside the sheet when showButton is true */
+  sheetContent?: React.ReactNode;
+  sheetTitle?: string;
+  sheetDescription?: string;
+  sheetIcon?: React.ReactNode;
+  sheetSaveButtonText?: string;
+  hideSheetHeader?: boolean;
+  hideSheetFooter?: boolean;
+  sheetSizeClass?: string;
 };
 
 const PageHero = ({
@@ -24,7 +25,7 @@ const PageHero = ({
   subtitle,
   type,
   buttonText,
-  showButton,
+  showButton = false,
   sheetContent,
   sheetTitle,
   sheetDescription,
@@ -32,7 +33,7 @@ const PageHero = ({
   sheetSaveButtonText,
   hideSheetHeader,
   hideSheetFooter,
-  sheetSizeClass
+  sheetSizeClass,
 }: PageHeroProps) => {
 
   //TODO - ADD a bulk add functionality
@@ -47,7 +48,7 @@ const PageHero = ({
       {showButton &&
         <ReusableSheet
           trigger={<div className="cursor-pointer flex flex-row p-1.5 pe-2 rounded-lg border text-sm items-center "><Plus className="size-5" />{buttonText}</div>}
-          title={sheetTitle}
+          title={sheetTitle ?? ""}
           description={sheetDescription}
           titleIcon={sheetIcon}
           formContent={sheetContent}

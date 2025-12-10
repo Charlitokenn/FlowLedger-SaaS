@@ -72,12 +72,14 @@ export const ProjectsForm = () => {
     const { showToast } = useToast();
     const closeRef = useRef<HTMLButtonElement | null>(null);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSubmit = async (data: any) => {
         console.log("Form submitted:", data);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleStepChange = (step: number, data: any) => {
         console.log(`Step ${step + 1} completed:`, data);
     };

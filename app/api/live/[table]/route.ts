@@ -1,13 +1,12 @@
-import { posts, users, comments } from '@/database/tenant-schema';
+import { contacts, projects } from '@/database/tenant-schema';
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from '@/lib/tenant-context';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 const tableMap = {
-    posts,
-    users,
-    comments,
+    contacts,
+    projects,
 } as const;
 
 export async function GET(

@@ -1,8 +1,6 @@
 import { ReusableDataTable } from "@/components/data-table/reusable-data-table";
 import AddContactForm from "@/components/forms/contacts-form";
 import PageHero from "@/components/ui/pageHero";
-import VerticalTabs from "@/components/reusable-vertical-tabs";
-import { BoxIcon, Store, Users } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,8 +10,8 @@ export const metadata: Metadata = {
   },
 };
 
-const ContactsPage = async ({ sessionClaims }: { sessionClaims: any }) => {
-  // const { success, data, error } = await GetAllContacts();
+const ContactsPage = async () => {
+  // TODO: integrate contacts data source and remove placeholder data.
   const columns = [
     {
       id: "fullName",
@@ -27,31 +25,21 @@ const ContactsPage = async ({ sessionClaims }: { sessionClaims: any }) => {
     },
   ];
 
-  if (success) {
-    if (success) {
-      // Data fetched successfully
-    } else {
-      throw new Error(error || "Failed to fetch contacts");
-    }
-  } else {
-    throw new Error(error || "Failed to fetch contacts");
-  }
-
   return (
     <section>
       <PageHero
         type="hero"
         title="Contacts"
-        subtitle={`Here you can manage all contacts`}
+        subtitle="Here you can manage all contacts"
         showButton
         buttonText="New Contact"
-        dialogTitle="New Contact"
-        dialogDescription="Fill out the form below to create a new contact."
-        dialog={<AddContactForm />}
+        sheetTitle="New Contact"
+        sheetDescription="Fill out the form below to create a new contact."
+        sheetContent={<AddContactForm />}
       />
-      <ReusableDataTable data={data ?? []} pageCount={10} columns={columns} />
+      <ReusableDataTable data={[]} pageCount={10} columns={columns} />
     </section>
-  )
+  );
 }
 
 export default ContactsPage

@@ -34,7 +34,7 @@ export default function BlogPage() {
                 Stop chasing payments with automated reminders
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Use FlowLedger's workflows to nudge clients at the right time—without
+                Use FlowLedger&apos;s workflows to nudge clients at the right time—without
                 adding more admin work to your week.
               </p>
             </article>

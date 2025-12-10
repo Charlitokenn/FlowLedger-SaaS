@@ -25,7 +25,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: LucideIcon
+    icon?: LucideIcon | React.ComponentType<React.SVGProps<SVGSVGElement>>
     isActive?: boolean
     items?: {
       title: string
@@ -47,9 +47,11 @@ export function NavMain({
   // Update openItem when pathname changes
   useEffect(() => {
     const newOpenItem = findOpenItem()
-    if (newOpenItem) {
+    if (newOpenItem && newOpenItem !== openItem) {
       setOpenItem(newOpenItem)
     }
+    // We intentionally only depend on pathname to avoid re-running when items identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   return (

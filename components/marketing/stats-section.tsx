@@ -29,7 +29,7 @@ export function StatsSection() {
             Global SMEs trust FlowLedger
           </h2>
           <p className="text-sm text-muted-foreground md:text-base">
-            Whether you're a freelancer, agency, or growing startup, FlowLedger
+            Whether you&apos;re a freelancer, agency, or growing startup, FlowLedger
             gives you the foundation to manage bookkeeping with confidence.
           </p>
           <p className="text-xs text-muted-foreground">
@@ -56,7 +56,7 @@ export function StatsSection() {
           <StatCard
             label="Support"
             value="24/7"
-            description="Friendly, human support when you need it, wherever you're located."
+            description="Friendly, human support when you need it, wherever you&apos;re located."
           />
         </div>
       </div>

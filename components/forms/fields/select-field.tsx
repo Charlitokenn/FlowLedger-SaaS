@@ -8,6 +8,22 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+type SelectOption = {
+    value: string;
+    label: string;
+}
+
+type SelectFieldProps = {
+    name: string;
+    label: string;
+    placeholder?: string;
+    options: SelectOption[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    control: any;
+    error?: { message?: string };
+    required?: boolean;
+}
+
 const SelectField = ({ name, label, placeholder, options, control, error, required = false }: SelectFieldProps) => {
     return (
         <div className="space-y-2">
@@ -25,7 +41,7 @@ const SelectField = ({ name, label, placeholder, options, control, error, requir
                             <SelectValue placeholder={placeholder} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-border text-foreground">
-                            {options.map((option) => (
+                            {options.map((option: SelectOption) => (
                                 <SelectItem value={option.value} key={option.value} className="focus:bg-accent focus:text-accent-foreground">
                                     {option.label}
                                 </SelectItem>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Section } from "./section";
 
 export function HeroSection() {
@@ -19,18 +20,18 @@ export function HeroSection() {
               track income, expenses, invoices, and clients in one place.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <a
+              <Link
                 href="/sign-up"
                 className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md hover:bg-primary/90"
               >
-                Get Started - it's free
-              </a>
-              <a
+                Get Started - it&apos;s free
+              </Link>
+              <Link
                 href="/features"
                 className="text-sm font-semibold text-primary hover:text-primary/80"
               >
                 Explore features
-              </a>
+              </Link>
             </div>
           </div>
 

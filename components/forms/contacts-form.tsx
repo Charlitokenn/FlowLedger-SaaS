@@ -4,8 +4,13 @@ import { useForm } from "react-hook-form"
 import InputField from "./fields/input-field"
 import { Button } from "../ui/button"
 import { useToast } from "../reusable components/toast-context"
-import CustomToast from "../custom-toast"
+import CustomToast from "../reusable components/custom-toast"
 import { useState } from "react"
+
+type ContactFormData = {
+  fullName: string
+  email: string
+}
 
 const AddContactForm = () => {
   const { showToast } = useToast()
@@ -14,18 +19,14 @@ const AddContactForm = () => {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>({
     defaultValues: {
-      full_name: "",
-      mobile: "",
-      alt_mobile: "",
+      fullName: "",
       email: "",
-      gender: "",
     },
     mode: 'onBlur'
-  },)
+  })
 
   const onSubmit = async (data: ContactFormData) => {
     try {
@@ -53,7 +54,7 @@ const AddContactForm = () => {
           label="Full Name"
           placeholder="Full Name"
           register={register}
-          error={errors.full_name}
+          error={errors.fullName}
           validation={{ required: 'Full name is required', minLength: 2 }}
         />
         <InputField

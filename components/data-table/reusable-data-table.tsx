@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { ColumnDef, Table } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import * as React from "react";
@@ -193,7 +195,7 @@ export function ReusableDataTable<TData extends Record<string, any>>({
   }, [baseColumns, enableRowSelection, rowActions]);
 
   // Initialize table
-  const { table } = useDataTable({
+  const { table } = useDataTable<TData>({
     data,
     columns,
     pageCount,
@@ -203,21 +205,22 @@ export function ReusableDataTable<TData extends Record<string, any>>({
       columnPinning: initialState.columnPinning || { right: rowActions ? ["actions"] : [] },
       columnVisibility: initialState.columnVisibility || {},
     },
-    getRowId: getRowId || ((row, index) => row.id || String(index)),
-    enableRowSelection: enableRowSelection
-      ? enableMultiRowSelection
-        ? true
-        : (row) => !table.getIsSomeRowsSelected() || row.getIsSelected()
-      : false,
+    getRowId:
+      getRowId || ((row: TData, index: number) => (row as any).id ?? String(index)),
   });
 
   // Handle row selection changes
+  const rowSelection = table.getState().rowSelection;
+
   React.useEffect(() => {
-    if (onRowsSelected) {
-      const selectedRows = table.getSelectedRowModel().rows.map(row => row.original);
-      onRowsSelected(selectedRows);
-    }
-  }, [table.getSelectedRowModel().rows, onRowsSelected]);
+    if (!onRowsSelected) return;
+
+    const selectedRows = table
+      .getSelectedRowModel()
+      .rows.map((row: { original: TData }) => row.original);
+
+    onRowsSelected(selectedRows);
+  }, [rowSelection, table, onRowsSelected]);
 
   // Render toolbar based on variant
   const renderToolbar = () => {

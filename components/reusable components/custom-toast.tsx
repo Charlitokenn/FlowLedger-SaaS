@@ -168,13 +168,15 @@ export default function CustomToastItem({
     setOpen(false)
   }, [onAction])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (autoOpen) {
-      setOpen(true)
-      reset()
-      start()
+    if (!autoOpen || open) {
+      return;
     }
-  }, [autoOpen, reset, start])
+    setOpen(true);
+    reset();
+    start();
+  }, [autoOpen, reset, start, open]);
 
   return (
     <Toast

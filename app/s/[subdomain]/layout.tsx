@@ -7,6 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import { TenantContextProvider } from "@/lib/context-provider";
 import { redirect } from "next/navigation";
 import { protocol, rootDomain } from "@/lib/utils";
+import type { SessionClaims } from "@/types/auth";
 
 export default async function TenantLayout({
     children,
@@ -14,19 +15,22 @@ export default async function TenantLayout({
     children: React.ReactNode;
 }>) {
     const { sessionClaims } = await auth();
-    if (!sessionClaims) {
+
+    const claims = sessionClaims as SessionClaims | null;
+
+    if (!claims) {
         redirect('/sign-in');
     }
 
-    const isAdmin = sessionClaims?.o?.rol === 'admin' || sessionClaims?.o?.rol === 'super_admin';
+    const isAdmin = claims.o?.rol === 'admin' || claims.o?.rol === 'super_admin';
 
     return (
         <SidebarProvider>
             <TenantSidebar
-                userName={sessionClaims?.firstName}
-                logo={sessionClaims?.orgLogo}
-                orgName={sessionClaims?.orgName}
-                role={sessionClaims?.o?.rol}
+                userName={claims.firstName}
+                logo={claims.orgLogo}
+                orgName={claims.orgName}
+                role={claims.o?.rol}
             />
             <SidebarInset>
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background">
@@ -40,7 +44,7 @@ export default async function TenantLayout({
                 </header>
 
                 <div className="flex flex-1 flex-col p-6 gap-4 lg:gap-6">
-                    <TenantContextProvider sessionClaims={sessionClaims}>
+                    <TenantContextProvider sessionClaims={claims}>
                         {children}
                     </TenantContextProvider>
                 </div>

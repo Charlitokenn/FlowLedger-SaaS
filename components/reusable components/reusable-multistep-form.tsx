@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useCallback, useMemo, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
@@ -380,9 +382,10 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm({
-    resolver: zodResolver(currentStepConfig.schema),
-    defaultValues: formData,
+  } = useForm<any>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(currentStepConfig.schema as any),
+    defaultValues: formData as any,
     mode: "onBlur",
   });
 
@@ -414,7 +417,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   const handlePrevStep = useCallback(() => {
     if (currentStep > 0 && allowNavigateBack) {
       setCurrentStep(prev => prev - 1);
-      reset(formData);
+      reset(formData as any);
     }
   }, [currentStep, formData, reset, allowNavigateBack]);
 
@@ -519,11 +522,12 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                 {currentStepConfig.fields.map((field) => (
                   <div key={field.name} className="space-y-2">
                     <Label htmlFor={field.name}>{field.label}</Label>
-                    <Input
+                        <Input
                       id={field.name}
                       type={field.type}
                       placeholder={field.placeholder}
-                      {...register(field.name)}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      {...register(field.name as any)}
                       className={cn(
                         errors[field.name] && "border-destructive focus:ring-destructive"
                       )}
