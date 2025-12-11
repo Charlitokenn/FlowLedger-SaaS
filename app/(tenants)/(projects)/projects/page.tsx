@@ -3,6 +3,7 @@ import { GetAllProjects } from "@/lib/actions/tenants/projects.actions";
 import { Metadata } from "next";
 import { ProjectsTable } from "./columns"
 import { ProjectsForm } from "@/components/forms/projects-form";
+import ProjectsBulkUpload from "@/components/forms/projects-bulk-upload";
 
 export const metadata: Metadata = {
   title: {
@@ -24,6 +25,11 @@ const ProjectsPage = async () => {
         buttonText="New Project"
         sheetTitle="New project"
         sheetContent={<ProjectsForm />}
+        bulkUploader={<ProjectsBulkUpload />}
+        showBulkUploader
+        hideBulkUploaderHeader={true}
+        hideBulkUploaderFooter={true}
+        bulkUploaderClass="max-w-full"
         hideSheetHeader={true}
         hideSheetFooter={true}
         sheetSaveButtonText="Save Project"

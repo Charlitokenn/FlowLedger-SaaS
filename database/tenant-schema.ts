@@ -233,7 +233,7 @@ export const projects = pgTable('projects', {
     id: uuid('id').primaryKey().defaultRandom(),
     projectName: text('project_name').notNull(),
     projectDetails: text('project_details'),
-    acquisitionDate: date('acquisition_date'),
+    acquisitionDate: date('acquisition_date').notNull(),
     sqmBought: numeric('sqm_bought'),
     acquisitionValue: numeric('acquisition_value').notNull(),
     region: text('region'),

@@ -1,8 +1,8 @@
 "use server";
 
-import { projects } from "@/database/tenant-schema";
+import { projects, type NewProject } from "@/database/tenant-schema";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export const GetAllProjects = async () => {
@@ -12,7 +12,8 @@ export const GetAllProjects = async () => {
         const results = await db
             .select()
             .from(projects)
-            .where(eq(projects.isDeleted, false));
+            .where(eq(projects.isDeleted, false))
+            .orderBy(desc(projects.acquisitionDate));
 
         return { success: true, data: results };
     } catch (error) {
@@ -42,7 +43,7 @@ export const SoftDeleteProjects = async (ids: string[]) => {
         revalidatePath("/projects");
 
         return { success: true, data: results };
-        
+
     } catch (error) {
         console.error("Error deleting projects:", error);
         return {
@@ -56,3 +57,30 @@ export const SoftDeleteProjects = async (ids: string[]) => {
         };
     }
 };
+
+export async function BulkImportProjects(rows: NewProject[]) {
+    try {
+        if (!rows.length) {
+            return { success: true, inserted: 0 };
+        }
+
+        const { db } = await getTenantDbForRequest();
+
+        await db.insert(projects).values(rows);
+
+        revalidatePath("/projects");
+
+        return { success: true, inserted: rows.length };
+    } catch (error) {
+        console.error("Bulk import projects failed", error);
+        return {
+            success: false,
+            error:
+                error instanceof Error && error.message === MISSING_TENANT_CONTEXT_ERROR
+                    ? "Unauthorized"
+                    : error instanceof Error
+                        ? error.message
+                        : "Failed to import projects",
+        } as const;
+    }
+}

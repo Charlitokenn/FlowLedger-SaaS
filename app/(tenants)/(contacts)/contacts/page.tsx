@@ -1,5 +1,6 @@
 import { ReusableDataTable } from "@/components/data-table/reusable-data-table";
 import AddContactForm from "@/components/forms/contacts-form";
+import ContactsCsvBulkUpload from "@/components/forms/projects-bulk-upload";
 import PageHero from "@/components/ui/pageHero";
 import { Metadata } from "next";
 
@@ -36,6 +37,12 @@ const ContactsPage = async () => {
         sheetTitle="New Contact"
         sheetDescription="Fill out the form below to create a new contact."
         sheetContent={<AddContactForm />}
+        showBulkUploader
+        bulkUploader={<ContactsCsvBulkUpload />}
+        bulkUploaderTitle="Bulk upload contacts"
+        bulkUploaderDescription="Upload a CSV file and map its columns to contact fields."
+        bulkUploaderClass="max-w-5xl w-full"
+        hideBulkUploaderFooter
       />
       <ReusableDataTable data={[]} pageCount={10} columns={columns} />
     </section>
