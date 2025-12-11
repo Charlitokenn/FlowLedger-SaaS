@@ -6,67 +6,141 @@ import { FormStep, MultiStepForm } from "../reusable components/reusable-multist
 import { SheetClose } from "@/components/ui/sheet";
 import { useToast } from "@/components/reusable components/toast-context";
 
-const personalInfoSchema = z.object({
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
+const projectDetailsSchema = z.object({
+    projectName: z.string().min(2, "Project name must be at least 2 characters"),
+    region: z.string().min(2, "Region must be at least 2 characters"),
+    district: z.string().min(2, "District must be at least 2 characters"),
+    ward: z.string().min(2, "Ward must be at least 2 characters"),
+    street: z.string().min(2, "Street must be at least 2 characters"),
+    sqmBought: z.string().min(1, "Square meters bought must be at least 100"),
+    numberOfPlots: z.string().min(1, "There must be at least 1 plot"),
+    projectOwner: z.string().min(2, "Project owner must be at least 2 characters"),
 });
 
-const addressSchema = z.object({
-    address: z.string().min(5, "Address must be at least 5 characters"),
-    city: z.string().min(2, "City must be at least 2 characters"),
-    zipCode: z.string().min(5, "Zip code must be at least 5 characters"),
+const acquisitionDetailsSchema = z.object({
+    acquisitionDate: z.date().refine(
+        (date) => date <= new Date(),
+        "Acquisition date must be on or before today"
+    ),
+    acquisitionValue: z.string().min(1, "Acquisition value must be at least 1000"),
+    commitmentAmount: z.string().min(1, "Commitment amount must be at least 1000"),
+    supplierName: z.string().min(2, "Supplier name must be at least 2 characters"),
 });
 
-const accountSchema = z.object({
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    password: z
-        .string()
-        .min(8, "Password must be at least 8 characters")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number"),
-    confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+const documentationSchema = z.object({
+    tpStatus: z.enum(["In Progress", "Approved"], "Invalid TP status"),
+    surveyStatus: z.enum(["In Progress", "Approved"], "Invalid Survey status"),
+    tpNumber: z.string().min(2, "TP number must be at least 2 characters"),
+    surveyNumber: z.string().min(2, "Survey number must be at least 2 characters"),
+    originalContract: z.instanceof(File),
+    tpDocument: z.instanceof(File),
+    surveyDocument: z.instanceof(File),
 });
+
+const localGovtSchema = z.object({
+    mwenyekitiName: z.string().min(2, "Mwenyekiti name must be at least 2 characters"),
+    mwenyekitiMobile: z.string().max(12, "Mobile must have 12 numbers").min(12, "Mobile must have 12 numbers"),
+    mtendajiName: z.string().min(2, "Mtendaji name must be at least 2 characters"),
+    mtendajiMobile: z.string().max(12, "Mobile must have 12 numbers").min(12, "Mobile must have 12 numbers"),
+    localGovtFee: z.coerce.number().min(1000, "Local government fee must be at least 1000"),
+})
+
+const statusOptions = [
+    { label: "In Progress", value: "In Progress" },
+    { label: "Approved", value: "Approved" },
+] as const;
+
+const regionOptions = [
+    { label: "Dar es Salaam", value: "Dar es Salaam" },
+    { label: "Arusha", value: "Arusha" },
+] as const;
+
+const districtsByRegion: Record<string, { label: string; value: string }[]> = {
+    "Dar es Salaam": [
+        { label: "Ilala", value: "Ilala" },
+        { label: "Kinondoni", value: "Kinondoni" },
+        { label: "Temeke", value: "Temeke" },
+        { label: "Kigamboni", value: "Kigamboni" },
+        { label: "Ubungo", value: "Ubungo" },
+    ],
+    Arusha: [
+        { label: "Arusha City", value: "Arusha City" },
+        { label: "Meru", value: "Meru" },
+    ],
+};
 
 const steps: FormStep[] = [
     {
-        id: "personal",
-        title: "Personal Info",
-        description: "Tell us about yourself",
-        schema: personalInfoSchema,
+        id: "project",
+        title: "Project Info",
+        description: "Details about the project",
+        schema: projectDetailsSchema,
         fields: [
-            { name: "firstName", label: "First Name", type: "text", placeholder: "John" },
-            { name: "lastName", label: "Last Name", type: "text", placeholder: "Doe" },
-            { name: "email", label: "Email", type: "email", placeholder: "john.doe@example.com" },
+            { name: "projectName", label: "Project Name", type: "text", placeholder: "Buyuni Project" },
+            { name: "region", label: "Region", type: "select", placeholder: "Select region", options: regionOptions },
+            {
+                name: "district",
+                label: "District",
+                type: "select",
+                placeholder: "Select district",
+                dependsOn: "region",
+                options: (values) => {
+                    const region = values.region as string | undefined;
+                    return region ? districtsByRegion[region] ?? [] : [];
+                },
+            },
+            { name: "ward", label: "Ward", type: "text", placeholder: "Gulubwida" },
+            { name: "street", label: "Street", type: "text", placeholder: "Gulubwida" },
+            { name: "sqmBought", label: "Square Meters Bought", type: "number", placeholder: "1000" },
+            { name: "numberOfPlots", label: "Number of Plots", type: "number", placeholder: "10" },
+            { name: "projectOwner", label: "Project Owner", type: "text", placeholder: "John Mcharo" },
         ],
         columns: 3
     },
     {
-        id: "address",
-        title: "Address",
-        description: "Where do you live?",
-        schema: addressSchema,
+        id: "acquisition",
+        title: "Acquisition Details",
+        description: "Details about the acquisition",
+        schema: acquisitionDetailsSchema,
         fields: [
-            { name: "address", label: "Address", type: "text", placeholder: "123 Main St" },
-            { name: "city", label: "City", type: "text", placeholder: "New York" },
-            { name: "zipCode", label: "Zip Code", type: "text", placeholder: "10001" },
+            { name: "acquisitionDate", label: "Acquisition Date", type: "date", placeholder: "YYYY-MM-DD" },
+            { name: "acquisitionValue", label: "Acquisition Value", type: "number", placeholder: "10000" },
+            { name: "supplierName", label: "Supplier Name", type: "text", placeholder: "Juma Salim" },
+            { name: "commitmentAmount", label: "Commitment Amount", type: "number", placeholder: "5000" },
         ],
+        columns: 2
     },
     {
-        id: "account",
-        title: "Account Setup",
-        description: "Create your account",
-        schema: accountSchema,
+        id: "documentation",
+        title: "Documentation",
+        description: "Upload project documentation",
+        schema: documentationSchema,
         fields: [
-            { name: "username", label: "Username", type: "text", placeholder: "johndoe" },
-            { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
-            { name: "confirmPassword", label: "Confirm Password", type: "password", placeholder: "••••••••" },
+            { name: "tpStatus", label: "TP Status", type: "select", placeholder: "Select TP status", options: [...statusOptions] },
+            { name: "tpNumber", label: "TP Number", type: "text", placeholder: "TP12345" },
+            { name: "tpDocument", label: "TP Document URL", type: "file", placeholder: "https://example.com/tp" },
+            { name: "surveyStatus", label: "Survey Status", type: "select", placeholder: "Select Survey status", options: [...statusOptions] },
+            { name: "surveyNumber", label: "Survey Number", type: "text", placeholder: "SURV12345" },
+            { name: "surveyDocument", label: "Survey Document URL", type: "file", placeholder: "https://example.com/survey" },
+            { name: "originalContract", label: "Original Contract URL", type: "file", placeholder: "https://example.com/contract" },
         ],
+        columns: 3
     },
-];
+    {
+        id: "localGovt",
+        title: "Local Government",
+        description: "Local government details",
+        schema: localGovtSchema,
+        fields: [
+            { name: "mwenyekitiName", label: "Mwenyekiti Name", type: "text", placeholder: "John Doe" },
+            { name: "mwenyekitiMobile", label: "Mwenyekiti Mobile", type: "phone", placeholder: "+255700123456", defaultCountry: "TZ" },
+            { name: "mtendajiName", label: "Mtendaji Name", type: "text", placeholder: "Jane Smith" },
+            { name: "mtendajiMobile", label: "Mtendaji Mobile", type: "phone", placeholder: "+255700123456", defaultCountry: "TZ" },
+            { name: "localGovtFee", label: "Local Government Fee (TZS)", type: "number", placeholder: "10000" },
+        ],
+        columns: 2
+    }
+]
 
 export const ProjectsForm = () => {
     const { showToast } = useToast();

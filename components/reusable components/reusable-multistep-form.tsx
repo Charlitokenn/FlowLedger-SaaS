@@ -2,13 +2,24 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState, useCallback, useMemo, createContext, useContext } from "react";
+import React, { useEffect, useState, useCallback, useMemo, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Loader2, Calendar as CalendarIcon, Upload, X } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "../ui/button";
+import { PhoneInput } from "../ui/base-phone-input";
+import { Calendar } from "../ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // ============================================================================
 // Stepper Components
@@ -271,13 +282,61 @@ function StepperSeparator({
 // Type Definitions
 // ============================================================================
 
-export interface FormField {
-  name: string;
+export type FormSelectOption = {
   label: string;
-  type: "text" | "email" | "password" | "number" | "tel" | "url";
-  placeholder?: string;
-  description?: string;
-}
+  value: string;
+  disabled?: boolean;
+};
+
+export type FormSelectOptionsResolver<TValues extends Record<string, any> = Record<string, any>> = (
+  values: TValues,
+) => ReadonlyArray<FormSelectOption>;
+
+export type FormField =
+  | {
+      name: string;
+      label: string;
+      type: "text" | "email" | "password" | "number" | "tel" | "url";
+      placeholder?: string;
+      description?: string;
+    }
+  | {
+      name: string;
+      label: string;
+      type: "date";
+      placeholder?: string;
+      description?: string;
+      min?: string;
+      max?: string;
+    }
+  | {
+      name: string;
+      label: string;
+      type: "select";
+      placeholder?: string;
+      description?: string;
+      /** If provided, the select will be disabled until this field (or fields) have a value. */
+      dependsOn?: string | string[];
+      /** Static options or a resolver function that can depend on other field values. */
+      options: ReadonlyArray<FormSelectOption> | FormSelectOptionsResolver;
+    }
+  | {
+      name: string;
+      label: string;
+      type: "file";
+      placeholder?: string;
+      description?: string;
+      accept?: string;
+      multiple?: boolean;
+    }
+  | {
+      name: string;
+      label: string;
+      type: "phone";
+      placeholder?: string;
+      description?: string;
+      defaultCountry?: string;
+    };
 
 export interface FormStep<TSchema extends z.ZodType = z.ZodType> {
   id: string;
@@ -324,18 +383,127 @@ const cn = (...classes: (string | boolean | undefined)[]) =>
 //   </button>
 // );
 
-const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
-  className,
-  ...props
-}) => (
-  <input
-    className={cn(
-      "w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
-      className
-    )}
-    {...props}
-  />
+const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => (
+    <input
+      ref={ref}
+      className={cn(
+        "w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+        className,
+      )}
+      {...props}
+    />
+  ),
 );
+Input.displayName = "Input";
+
+function FileDropzone({
+  id,
+  accept,
+  multiple,
+  value,
+  onChange,
+  hasError,
+  ariaDescribedBy,
+}: {
+  id: string;
+  accept?: string;
+  multiple?: boolean;
+  value: unknown;
+  onChange: (next: File | File[] | null) => void;
+  hasError: boolean;
+  ariaDescribedBy?: string;
+}) {
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const files: File[] = Array.isArray(value)
+    ? (value as File[])
+    : value instanceof File
+      ? [value]
+      : [];
+
+  return (
+    <div className="space-y-2">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        className={cn(
+          "relative flex items-center justify-between gap-3 rounded-lg border border-dashed border-input bg-muted/10 px-4 py-4 text-sm cursor-pointer",
+          hasError && "border-destructive",
+        )}
+        aria-describedby={ariaDescribedBy}
+      >
+        <input
+          ref={inputRef}
+          id={id}
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          className="hidden"
+          onChange={(e) => {
+            const list = e.target.files;
+            if (!list || list.length === 0) {
+              onChange(null);
+              return;
+            }
+            onChange(multiple ? Array.from(list) : list[0]);
+          }}
+        />
+
+        <div className="min-w-0 flex items-center gap-3">
+          <span className={cn(
+            "flex size-9 items-center justify-center rounded-md border bg-background",
+            hasError && "border-destructive",
+          )}>
+            <Upload className="size-4 text-muted-foreground" />
+          </span>
+
+          <div className="min-w-0">
+            <p className="truncate font-medium">
+              {files.length === 0
+                ? "Drop a file here, or click to browse"
+                : files.length === 1
+                  ? files[0].name
+                  : `${files.length} files selected`}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">
+              {files.length === 0
+                ? (accept ? `Accepted: ${accept}` : "")
+                : "Click to replace"}
+            </p>
+          </div>
+        </div>
+
+        {files.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange(null);
+              if (inputRef.current) {
+                inputRef.current.value = "";
+              }
+            }}
+            className="shrink-0"
+            aria-label="Remove file"
+          >
+            <X className="size-4" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const Label: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = ({
   className,
@@ -379,6 +547,9 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
 
   const {
     register,
+    control,
+    getValues,
+    setValue,
     handleSubmit,
     formState: { errors },
     reset,
@@ -388,6 +559,28 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
     defaultValues: formData as any,
     mode: "onBlur",
   });
+
+  const watchedValues = useWatch({ control });
+
+  // If a dependent select's options change and the current value no longer exists, clear it.
+  // Example: if Region changes, the District options list changes.
+  useEffect(() => {
+    const fields = currentStepConfig.fields;
+    const values = (watchedValues ?? {}) as Record<string, any>;
+
+    for (const f of fields) {
+      if (f.type !== "select" || typeof f.options !== "function") continue;
+
+      const opts = f.options(values);
+      const currentValue = getValues(f.name);
+      if (!currentValue) continue;
+
+      const exists = opts.some((o) => o.value === currentValue);
+      if (!exists) {
+        setValue(f.name, "", { shouldDirty: true, shouldValidate: true });
+      }
+    }
+  }, [currentStep, currentStepConfig.fields, getValues, setValue, watchedValues]);
 
   const handleNextStep = useCallback(async (stepData: any) => {
     const updatedData = { ...formData, ...stepData };
@@ -519,30 +712,192 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                 !currentStepConfig.columns && "grid-cols-1 md:grid-cols-2", // default
                 stepperOrientation === "horizontal" ? "mt-10" : "mt-6"
               )}>
-                {currentStepConfig.fields.map((field) => (
-                  <div key={field.name} className="space-y-2">
-                    <Label htmlFor={field.name}>{field.label}</Label>
-                    <Input id={field.name}
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      {...register(field.name as any)}
-                      className={cn(
-                        errors[field.name] && "border-destructive focus:ring-destructive"
+                {currentStepConfig.fields.map((field) => {
+                  const hasError = Boolean(errors[field.name]);
+
+                  const resolveSelectOptions = (
+                    f: Extract<FormField, { type: "select" }>,
+                    values: Record<string, any>,
+                  ) => {
+                    return typeof f.options === "function" ? f.options(values) : f.options;
+                  };
+
+                  const isSelectDisabled = (
+                    f: Extract<FormField, { type: "select" }>,
+                    values: Record<string, any>,
+                    resolvedOptions: ReadonlyArray<FormSelectOption>,
+                  ) => {
+                    if (resolvedOptions.length === 0) return true;
+                    if (!f.dependsOn) return false;
+
+                    const deps = Array.isArray(f.dependsOn) ? f.dependsOn : [f.dependsOn];
+                    return deps.some((d) => !values[d]);
+                  };
+
+                  const values = (watchedValues ?? {}) as Record<string, any>;
+
+                  return (
+                    <div key={field.name} className="space-y-2">
+                      <Label htmlFor={field.name}>{field.label}</Label>
+
+                      {field.type === "select" ? (
+                        <Controller
+                          control={control}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          name={field.name as any}
+                          render={({ field: rhfField }) => {
+                            const resolved = resolveSelectOptions(field, values);
+                            const disabled = isSelectDisabled(field, values, resolved);
+
+                            return (
+                              <Select
+                                value={(rhfField.value ?? "") as string}
+                                onValueChange={(value) => rhfField.onChange(value)}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger
+                                  id={field.name}
+                                  className={cn(
+                                    "w-full",
+                                    hasError && "border-destructive focus:ring-destructive",
+                                  )}
+                                  aria-invalid={hasError ? "true" : "false"}
+                                  aria-describedby={hasError ? `${field.name}-error` : undefined}
+                                >
+                                  <SelectValue
+                                    placeholder={field.placeholder ?? "Select an option"}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {resolved.map((opt) => (
+                                    <SelectItem
+                                      key={opt.value}
+                                      value={opt.value}
+                                      disabled={opt.disabled}
+                                    >
+                                      {opt.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          }}
+                        />
+                      ) : field.type === "phone" ? (
+                        <Controller
+                          control={control}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          name={field.name as any}
+                          render={({ field: rhfField }) => (
+                            <PhoneInput
+                              placeholder={field.placeholder}
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              defaultCountry={field.defaultCountry as any}
+                              value={rhfField.value}
+                              onChange={(v) => rhfField.onChange(v)}
+                              aria-invalid={hasError ? "true" : "false"}
+                              aria-describedby={hasError ? `${field.name}-error` : undefined}
+                            />
+                          )}
+                        />
+                      ) : field.type === "date" ? (
+                        <Controller
+                          control={control}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          name={field.name as any}
+                          render={({ field: rhfField }) => {
+                            const value = rhfField.value as Date | undefined;
+                            const minDate = field.min ? new Date(field.min) : undefined;
+                            const maxDate = field.max ? new Date(field.max) : undefined;
+
+                            return (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal",
+                                      !value && "text-muted-foreground",
+                                      hasError && "border-destructive",
+                                    )}
+                                    aria-invalid={hasError ? "true" : "false"}
+                                    aria-describedby={hasError ? `${field.name}-error` : undefined}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {value ? (
+                                      format(value, "PPP")
+                                    ) : (
+                                      <span>{field.placeholder ?? "Pick a date"}</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={value}
+                                    onSelect={(d) => rhfField.onChange(d)}
+                                    initialFocus
+                                    disabled={(d) => {
+                                      if (minDate && d < minDate) return true;
+                                      if (maxDate && d > maxDate) return true;
+                                      return false;
+                                    }}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            );
+                          }}
+                        />
+                      ) : field.type === "file" ? (
+                        <Controller
+                          control={control}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          name={field.name as any}
+                          render={({ field: rhfField }) => (
+                            <FileDropzone
+                              id={field.name}
+                              accept={field.accept}
+                              multiple={field.multiple}
+                              value={rhfField.value}
+                              onChange={(v) => rhfField.onChange(v)}
+                              hasError={hasError}
+                              ariaDescribedBy={
+                                hasError ? `${field.name}-error` : undefined
+                              }
+                            />
+                          )}
+                        />
+                      ) : (
+                        <Input
+                          id={field.name}
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          {...register(field.name as any)}
+                          className={cn(
+                            hasError && "border-destructive focus:ring-destructive",
+                          )}
+                          aria-invalid={hasError ? "true" : "false"}
+                          aria-describedby={hasError ? `${field.name}-error` : undefined}
+                        />
                       )}
-                      aria-invalid={errors[field.name] ? "true" : "false"}
-                      aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
-                    />
-                    {field.description && !errors[field.name] && (
-                      <p className="text-xs text-gray-500">{field.description}</p>
-                    )}
-                    {errors[field.name] && (
-                      <p id={`${field.name}-error`} className="text-xs text-destructive" role="alert">
-                        {errors[field.name]?.message as string}
-                      </p>
-                    )}
-                  </div>
-                ))}
+
+                      {field.description && !hasError && (
+                        <p className="text-xs text-gray-500">{field.description}</p>
+                      )}
+                      {hasError && (
+                        <p
+                          id={`${field.name}-error`}
+                          className="text-xs text-destructive"
+                          role="alert"
+                        >
+                          {errors[field.name]?.message as string}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Navigation Buttons */}
