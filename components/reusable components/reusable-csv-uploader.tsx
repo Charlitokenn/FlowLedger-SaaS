@@ -580,7 +580,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                 size="sm"
                 type="button"
                 onClick={() => setStep(1)}
-                className="cursor-pointer"
+                className="btn-primary"
               >
                 Change file
               </Button>
@@ -690,7 +690,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                   type="button"
                   disabled={requiredFieldsMissing.length > 0}
                   onClick={buildPreviewAndValidate}
-                  className="cursor-pointer"
+                  className="btn-primary"
                 >
                   Continue
                 </Button>
@@ -792,7 +792,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                   type="button"
                   onClick={handleConfirmAndSubmit}
                   disabled={isSubmitting}
-                  className="cursor-pointer"
+                  className="btn-primary"
                 >
                   {isSubmitting ? "Uploading..." : "Confirm & Upload"}
                 </Button>

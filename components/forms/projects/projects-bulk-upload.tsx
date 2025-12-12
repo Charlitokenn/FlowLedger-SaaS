@@ -108,7 +108,6 @@ const projectFields: CsvFieldConfig<NewProject>[] = [
 ];
 
 export default function ProjectsBulkUpload() {
-  const { showToast } = useToast();
   const sheet = useSheetControl();
 
   return (

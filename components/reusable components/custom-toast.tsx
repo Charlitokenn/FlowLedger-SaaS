@@ -29,7 +29,7 @@ export default function CustomToastItem({
   description,
   duration = 5000,
   variant = "success",
-  showAction = true,
+  showAction = false,
   actionLabel = "Undo changes",
   onAction,
   onClose,

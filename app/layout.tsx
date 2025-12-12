@@ -93,13 +93,13 @@ export default function RootLayout({
           userButtonPopoverFooter: "hidden",
 
           //Global Customizations
-          headerTitle: "dark:text-primary-foreground",
+          headerTitle: "dark:text-accent-foreground!",
           footer: "hidden",
           profileSectionTitleText: "dark:text-muted-foreground",
           organizationPreviewMainIdentifier: "dark:text-primary-foreground",
           profileSectionPrimaryButton: "dark:border dark:rounded-lg  dark:text-primary-foreground",
 
-          formButtonPrimary: "submit-button",
+          formButtonPrimary: "btn-primary!",
           formFieldInput: "input-field",
           formFieldLabel: "input-label",
 

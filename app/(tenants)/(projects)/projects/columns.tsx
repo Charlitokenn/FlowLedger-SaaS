@@ -309,7 +309,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                 content={
                                     <Button
                                         size='sm'
-                                        className="p-1 cursor-pointer w-full"
+                                        className="p-1 btn-primary w-full"
                                         onClick={() => handleSingleDelete(project.id)}
                                         disabled={deletingRowIds.has(project.id)}
                                     >
@@ -547,7 +547,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                     content={
                                         <Button
                                             size='sm'
-                                            className="px-2 cursor-pointer"
+                                            className="px-2 btn-primary"
                                             onClick={() => handleDelete()}
                                             disabled={isDeleting}
                                         >

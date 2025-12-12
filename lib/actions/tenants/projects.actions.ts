@@ -1,8 +1,9 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import crypto from "crypto";
 import { projects, type NewProject } from "@/database/tenant-schema";
-import { uploadDocumentToCloudinary } from "@/lib/cloudinary/cloudinary.server";
+import { deleteR2Object, getPresignedGetUrl, uploadPdfToR2 } from "@/lib/r2/r2.server";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
 import { desc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -205,6 +206,11 @@ function isUuid(v: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 }
 
+function isLikelyUrl(v: string | null | undefined): v is string {
+    if (!v) return false;
+    return /^https?:\/\//i.test(v);
+}
+
 export async function CreateProject(formData: FormData) {
     try {
         const { db } = await getTenantDbForRequest();
@@ -247,36 +253,37 @@ export async function CreateProject(formData: FormData) {
 
         const input = parsed.data;
 
-        // Upload docs first (so we only insert when uploads succeed).
+        // Generate an id up-front so we can namespace uploads under the project.
+        const projectId = crypto.randomUUID();
+
+        // Upload docs to a PRIVATE R2 bucket and store only the object keys in the DB.
         const originalContract = getFile(formData, "originalContract");
         const tpDocument = getFile(formData, "tpDocument");
         const surveyDocument = getFile(formData, "surveyDocument");
 
-        const allowedDocTypes = ["application/pdf"] as const;
-
         const [contractUpload, tpUpload, surveyUpload] = await Promise.all([
             originalContract
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: originalContract,
                     folder: "Contracts",
-                    publicIdPrefix: `${input.projectName}-contract`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId,
+                    namePrefix: `${input.projectName}-contract`,
                 })
                 : Promise.resolve(undefined),
             tpDocument
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: tpDocument,
                     folder: "Town plans",
-                    publicIdPrefix: `${input.projectName}-tp`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId,
+                    namePrefix: `${input.projectName}-tp`,
                 })
                 : Promise.resolve(undefined),
             surveyDocument
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: surveyDocument,
                     folder: "Survey Plans",
-                    publicIdPrefix: `${input.projectName}-survey`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId,
+                    namePrefix: `${input.projectName}-survey`,
                 })
                 : Promise.resolve(undefined),
         ]);
@@ -287,6 +294,7 @@ export async function CreateProject(formData: FormData) {
         const supplierNameText = supplierAsUuid ? undefined : input.supplierName;
 
         const row: NewProject = {
+            id: projectId,
             projectName: input.projectName,
             acquisitionDate: toDateOnlyString(input.acquisitionDate),
             acquisitionValue: input.acquisitionValue,
@@ -308,9 +316,10 @@ export async function CreateProject(formData: FormData) {
             surveyStatus: input.surveyStatus,
             surveyNumber: input.surveyNumber,
 
-            originalContractPdf: contractUpload?.secureUrl,
-            tpUrl: tpUpload?.secureUrl,
-            surveyUrl: surveyUpload?.secureUrl,
+            // Store R2 object keys (private). Use presigned URLs when serving to clients.
+            originalContractPdf: contractUpload?.key,
+            tpUrl: tpUpload?.key,
+            surveyUrl: surveyUpload?.key,
 
             mwenyekitiName: input.mwenyekitiName,
             mwenyekitiMobile: input.mwenyekitiMobile,
@@ -404,27 +413,27 @@ export async function UpdateProject(formData: FormData) {
 
         const [contractUpload, tpUpload, surveyUpload] = await Promise.all([
             originalContract
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: originalContract,
                     folder: "Contracts",
-                    publicIdPrefix: `${input.projectName}-contract`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId: input.projectId,
+                    namePrefix: `${input.projectName}-contract`,
                 })
                 : Promise.resolve(undefined),
             tpDocument
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: tpDocument,
                     folder: "Town plans",
-                    publicIdPrefix: `${input.projectName}-tp`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId: input.projectId,
+                    namePrefix: `${input.projectName}-tp`,
                 })
                 : Promise.resolve(undefined),
             surveyDocument
-                ? uploadDocumentToCloudinary({
+                ? uploadPdfToR2({
                     file: surveyDocument,
                     folder: "Survey Plans",
-                    publicIdPrefix: `${input.projectName}-survey`,
-                    allowedMimeTypes: allowedDocTypes,
+                    projectId: input.projectId,
+                    namePrefix: `${input.projectName}-survey`,
                 })
                 : Promise.resolve(undefined),
         ]);
@@ -440,6 +449,10 @@ export async function UpdateProject(formData: FormData) {
                 ? `${current.projectDetails}\nSupplier: ${supplierNameText}`
                 : `Supplier: ${supplierNameText}`
             : current.projectDetails;
+
+        const prevContractKey = current.originalContractPdf;
+        const prevTpKey = current.tpUrl;
+        const prevSurveyKey = current.surveyUrl;
 
         const updated = await db
             .update(projects)
@@ -465,9 +478,9 @@ export async function UpdateProject(formData: FormData) {
                 surveyStatus: input.surveyStatus ?? current.surveyStatus,
                 surveyNumber: input.surveyNumber ?? current.surveyNumber,
 
-                originalContractPdf: contractUpload?.secureUrl ?? current.originalContractPdf,
-                tpUrl: tpUpload?.secureUrl ?? current.tpUrl,
-                surveyUrl: surveyUpload?.secureUrl ?? current.surveyUrl,
+                originalContractPdf: contractUpload?.key ?? current.originalContractPdf,
+                tpUrl: tpUpload?.key ?? current.tpUrl,
+                surveyUrl: surveyUpload?.key ?? current.surveyUrl,
 
                 mwenyekitiName: input.mwenyekitiName ?? current.mwenyekitiName,
                 mwenyekitiMobile: input.mwenyekitiMobile ?? current.mwenyekitiMobile,
@@ -479,6 +492,37 @@ export async function UpdateProject(formData: FormData) {
             })
             .where(eq(projects.id, input.projectId))
             .returning();
+
+        // Best-effort cleanup: if a document was replaced, delete the old object.
+        // (Do this after DB update so we don't lose the only reference if update fails.)
+        try {
+            if (
+                contractUpload?.key &&
+                prevContractKey &&
+                prevContractKey !== contractUpload.key &&
+                !isLikelyUrl(prevContractKey)
+            ) {
+                await deleteR2Object(prevContractKey);
+            }
+            if (
+                tpUpload?.key &&
+                prevTpKey &&
+                prevTpKey !== tpUpload.key &&
+                !isLikelyUrl(prevTpKey)
+            ) {
+                await deleteR2Object(prevTpKey);
+            }
+            if (
+                surveyUpload?.key &&
+                prevSurveyKey &&
+                prevSurveyKey !== surveyUpload.key &&
+                !isLikelyUrl(prevSurveyKey)
+            ) {
+                await deleteR2Object(prevSurveyKey);
+            }
+        } catch (e) {
+            console.warn("R2 cleanup failed", e);
+        }
 
         revalidatePath("/projects");
 
@@ -493,6 +537,73 @@ export async function UpdateProject(formData: FormData) {
                     : error instanceof Error
                         ? error.message
                         : "Failed to update project",
+        } as const;
+    }
+}
+
+const GetProjectDocumentUrlSchema = z.object({
+    projectId: z.string().uuid(),
+    doc: z.enum(["contract", "tp", "survey"]),
+    expiresInSeconds: z.number().int().min(30).max(60 * 30).optional(),
+});
+
+export async function GetProjectDocumentUrl(input: z.infer<typeof GetProjectDocumentUrlSchema>) {
+    try {
+        const parsed = GetProjectDocumentUrlSchema.safeParse(input);
+        if (!parsed.success) {
+            return { success: false, error: "Invalid request" } as const;
+        }
+
+        const { db } = await getTenantDbForRequest();
+
+        const row = await db
+            .select({
+                id: projects.id,
+                originalContractPdf: projects.originalContractPdf,
+                tpUrl: projects.tpUrl,
+                surveyUrl: projects.surveyUrl,
+            })
+            .from(projects)
+            .where(eq(projects.id, parsed.data.projectId))
+            .limit(1);
+
+        const project = row[0];
+        if (!project) {
+            return { success: false, error: "Project not found" } as const;
+        }
+
+        const key =
+            parsed.data.doc === "contract"
+                ? project.originalContractPdf
+                : parsed.data.doc === "tp"
+                    ? project.tpUrl
+                    : project.surveyUrl;
+
+        if (!key) {
+            return { success: false, error: "Document not available" } as const;
+        }
+
+        // Backwards compatibility: if old Cloudinary URLs exist in DB, return as-is.
+        if (isLikelyUrl(key)) {
+            return { success: true, data: { url: key } } as const;
+        }
+
+        const url = await getPresignedGetUrl({
+            key,
+            expiresInSeconds: parsed.data.expiresInSeconds ?? 60 * 5,
+        });
+
+        return { success: true, data: { url } } as const;
+    } catch (error) {
+        console.error("GetProjectDocumentUrl failed", error);
+        return {
+            success: false,
+            error:
+                error instanceof Error && error.message === MISSING_TENANT_CONTEXT_ERROR
+                    ? "Unauthorized"
+                    : error instanceof Error
+                        ? error.message
+                        : "Failed to generate download URL",
         } as const;
     }
 }

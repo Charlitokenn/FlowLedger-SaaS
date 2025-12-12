@@ -158,15 +158,23 @@ function parseDateOnly(value: unknown): Date | undefined {
   return dt;
 }
 
-function formatExistingUrlLabel(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
-  try {
-    const u = new URL(url);
-    const tail = u.pathname.split("/").pop();
-    return tail ? `Current: ${tail}` : "Current document uploaded";
-  } catch {
-    return "Current document uploaded";
+function formatExistingUrlLabel(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+
+  // If it's a URL (legacy), show the last pathname segment.
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const u = new URL(value);
+      const tail = u.pathname.split("/").pop();
+      return tail ? `Current: ${tail}` : "Current document uploaded";
+    } catch {
+      return "Current document uploaded";
+    }
   }
+
+  // Otherwise assume it's an R2 object key like "Contracts/<projectId>/<file>.pdf".
+  const tail = value.split("/").pop();
+  return tail ? `Current: ${tail}` : "Current document uploaded";
 }
 
 type EditProjectFormProps = {
