@@ -66,22 +66,8 @@ export const SIDEBAR_MENU_ITEMS = {
     },
     {
       title: "Projects",
-      url: "#",
+      url: "/projects",
       icon: ArchiveIcon,
-      items: [
-        {
-          title: "Project List",
-          url: "/projects",
-        },
-        {
-          title: "Plots",
-          url: "/plots",
-        },
-        {
-          title: "Project Payments",
-          url: "/project-payments",
-        },
-      ],
     },
     {
       title: "Suppliers",

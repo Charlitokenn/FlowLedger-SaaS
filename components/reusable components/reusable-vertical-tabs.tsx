@@ -6,14 +6,14 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-interface VerticalTabItem {
+export interface VerticalTabItem {
   value: string;
   label: string;
   icon: LucideIcon;
   content: React.ReactNode;
 }
 
-interface VerticalTabsProps {
+export interface VerticalTabsProps {
   tabs: VerticalTabItem[];
   defaultValue?: string;
   className?: string;
@@ -32,16 +32,16 @@ export default function VerticalTabs({
     <Tabs
       defaultValue={defaultTab}
       orientation="vertical"
-      className={`w-full flex-row ${className}`}
+      className={`w-full flex-row items-start ${className}`}
     >
-      <TabsList className="flex-col gap-1 rounded-none bg-transparent px-1 py-0 text-foreground">
+      <TabsList className="flex-col gap-3 rounded-none bg-transparent px-1 py-0 text-foreground">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="relative w-full justify-start after:absolute after:inset-y-0 after:start-0 after:-ms-1 after:w-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent"
+              className="relative w-full justify-start cursor-pointer after:absolute after:inset-y-0 after:start-0 after:-ms-1 after:w-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-primary data-[state=active]:dark:bg-primary-foreground data-[state=active]:text-background data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-primary"
             >
               <Icon
                 className="-ms-0.5 me-1.5 opacity-60"
