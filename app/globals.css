@@ -120,6 +120,21 @@
   }
 }
 
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@layer utilities {
+  .toast-progress {
+    animation: toast-progress var(--toast-duration, 5000ms) linear forwards;
+  }
+}
+
 @layer components {
   /* Base button system */
   .btn {
@@ -127,7 +142,7 @@
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    @apply bg-primary! text-primary-foreground! hover:bg-primary/90! dark:bg-accent-foreground! dark:text-muted! cursor-pointer!;
   }
 
   .btn-secondary {

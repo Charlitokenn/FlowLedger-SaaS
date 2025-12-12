@@ -12,89 +12,6 @@ import {
   ToastTitle,
 } from "@/components/ui/toast"
 
-interface UseProgressTimerProps {
-  duration: number
-  interval?: number
-  onComplete?: () => void
-}
-
-function useProgressTimer({
-  duration,
-  interval = 100,
-  onComplete,
-}: UseProgressTimerProps) {
-  const [progress, setProgress] = useState(duration)
-  const timerRef = useRef<number>(0)
-  const timerState = useRef({
-    startTime: 0,
-    remaining: duration,
-    isPaused: false,
-  })
-
-  const cleanup = useCallback(() => {
-    window.clearInterval(timerRef.current)
-  }, [])
-
-  const reset = useCallback(() => {
-    cleanup()
-    setProgress(duration)
-    timerState.current = {
-      startTime: 0,
-      remaining: duration,
-      isPaused: false,
-    }
-  }, [duration, cleanup])
-
-  const start = useCallback(() => {
-    const state = timerState.current
-    state.startTime = Date.now()
-    state.isPaused = false
-
-    timerRef.current = window.setInterval(() => {
-      const elapsedTime = Date.now() - state.startTime
-      const remaining = Math.max(0, state.remaining - elapsedTime)
-
-      setProgress(remaining)
-
-      if (remaining <= 0) {
-        cleanup()
-        onComplete?.()
-      }
-    }, interval)
-  }, [interval, cleanup, onComplete])
-
-  const pause = useCallback(() => {
-    const state = timerState.current
-    if (!state.isPaused) {
-      cleanup()
-      state.remaining = Math.max(
-        0,
-        state.remaining - (Date.now() - state.startTime)
-      )
-      state.isPaused = true
-    }
-  }, [cleanup])
-
-  const resume = useCallback(() => {
-    const state = timerState.current
-    if (state.isPaused && state.remaining > 0) {
-      start()
-    }
-  }, [start])
-
-  useEffect(() => {
-    return cleanup
-  }, [cleanup])
-
-  return {
-    progress,
-    start,
-    pause,
-    resume,
-    reset,
-  }
-}
-
 interface CustomToastItemProps {
   title: string
   description?: string
@@ -119,13 +36,8 @@ export default function CustomToastItem({
   autoOpen = false,
 }: CustomToastItemProps) {
   const [open, setOpen] = useState(autoOpen)
-  const { progress, start, pause, resume, reset } = useProgressTimer({
-    duration,
-    onComplete: () => {
-      setOpen(false)
-      onClose?.()
-    },
-  })
+  const progressBarRef = useRef<HTMLDivElement | null>(null)
+  const progressAnimRef = useRef<Animation | null>(null)
 
   const variantStyles = {
     default: {
@@ -168,22 +80,62 @@ export default function CustomToastItem({
     setOpen(false)
   }, [onAction])
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!autoOpen || open) {
-      return;
+    // Ensure the toast is opened when mounted from context.
+    if (autoOpen) setOpen(true)
+  }, [autoOpen])
+
+  useEffect(() => {
+    // Restart the progress bar animation whenever the toast opens.
+    if (!open) {
+      progressAnimRef.current?.cancel()
+      progressAnimRef.current = null
+      return
     }
-    setOpen(true);
-    reset();
-    start();
-  }, [autoOpen, reset, start, open]);
+
+    const el = progressBarRef.current
+    if (!el) return
+
+    progressAnimRef.current?.cancel()
+    // Ensure we start from full width.
+    el.style.transform = "scaleX(1)"
+
+    // Use Web Animations API (avoids Tailwind/CSS layer issues and is very reliable).
+    const anim = el.animate(
+      [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
+      {
+        duration,
+        easing: "linear",
+        fill: "forwards",
+      },
+    )
+
+    progressAnimRef.current = anim
+
+    return () => {
+      anim.cancel()
+      if (progressAnimRef.current === anim) {
+        progressAnimRef.current = null
+      }
+    }
+  }, [open, duration])
 
   return (
     <Toast
       open={open}
       onOpenChange={handleOpenChange}
-      onPause={pause}
-      onResume={resume}
+      duration={duration}
+      onPause={() => {
+        progressAnimRef.current?.pause()
+      }}
+      onResume={() => {
+        // Some browsers may auto-finish; guard with try.
+        try {
+          progressAnimRef.current?.play()
+        } catch {
+          // no-op
+        }
+      }}
     >
       <div className="flex w-full justify-between gap-3">
         <Icon
@@ -222,15 +174,11 @@ export default function CustomToastItem({
           </Button>
         </ToastClose>
       </div>
-      <div className="contents" aria-hidden="true">
-        <div
-          className={`pointer-events-none absolute bottom-0 left-0 h-1 w-full ${style.progressColor}`}
-          style={{
-            width: `${(progress / duration) * 100}%`,
-            transition: "width 100ms linear",
-          }}
-        />
-      </div>
+      <div
+        ref={progressBarRef}
+        aria-hidden="true"
+        className={`pointer-events-none absolute bottom-0 left-0 z-10 h-1.5 w-full origin-left ${style.progressColor}`}
+      />
     </Toast>
   )
 }

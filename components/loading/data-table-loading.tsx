@@ -16,7 +16,10 @@ export const DataTableLoading = ({ columnCount, rowCount, filterCount, cellWidth
                     <Skeleton className="h-8 w-24 mb-2" />
                     <Skeleton className="h-4 w-64" />
                 </div>
-                <Skeleton className="h-10 w-32" />
+                <div className='flex gap-1'>
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-10" />
+                </div>
             </div>
             <DataTableSkeleton
                 columnCount={columnCount}

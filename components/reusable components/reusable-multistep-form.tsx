@@ -362,6 +362,8 @@ export interface MultiStepFormConfig<TData = Record<string, any>> {
   onSubmit: (data: TData) => void | Promise<void>;
   onStepChange?: (step: number, data: Partial<TData>) => void;
   onComplete?: () => void;
+  /** Optional initial values (useful for edit forms). */
+  initialData?: Partial<TData>;
   className?: string;
   submitButtonText?: string;
   submittingButtonText?: string;
@@ -711,6 +713,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   onSubmit,
   onStepChange,
   onComplete,
+  initialData,
   className,
   submitButtonText = "Submit",
   submittingButtonText = "Submitting...",
@@ -719,7 +722,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   stepperOrientation = "horizontal",
 }: MultiStepFormConfig<TData>) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<Partial<TData>>({});
+  const [formData, setFormData] = useState<Partial<TData>>(() => initialData ?? {});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentStepConfig = steps[currentStep];
@@ -1065,6 +1068,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                     type="button"
                     onClick={handleSubmit(handleNextStep)}
                     disabled={isSubmitting}
+                    className="btn-primary"
                   >
                     {isLastStep ? (
                       isSubmitting ? submittingButtonText : submitButtonText

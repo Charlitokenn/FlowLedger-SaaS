@@ -1,6 +1,6 @@
 import { ReusableDataTable } from "@/components/data-table/reusable-data-table";
-import AddContactForm from "@/components/forms/contacts-form";
-import ContactsCsvBulkUpload from "@/components/forms/projects-bulk-upload";
+import AddContactForm from "@/components/forms/projects/add-contacts-form";
+import ContactsCsvBulkUpload from "@/components/forms/projects/projects-bulk-upload";
 import PageHero from "@/components/ui/pageHero";
 import { Metadata } from "next";
 

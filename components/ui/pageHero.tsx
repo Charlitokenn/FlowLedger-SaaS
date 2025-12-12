@@ -1,8 +1,7 @@
 "use client";
 
-import { BulkUploadIcon } from "../icons";
 import ReusableSheet from "../reusable components/reusable-sheet";
-import { Plus } from "lucide-react";
+import { FilesIcon, Plus } from "lucide-react";
 import ReusableTooltip from "../reusable components/reusable-tooltip";
 
 type PageHeroProps = {
@@ -65,7 +64,7 @@ const PageHero = ({
       <div className="flex flex-row gap-2">
         {showButton &&
           <ReusableSheet
-            trigger={<div className="cursor-pointer flex flex-row p-1.5 pe-2 rounded-lg border dark:border-primary-foreground text-sm items-center "><Plus className="size-5" />{buttonText}</div>}
+            trigger={<div className="btn-primary flex flex-row p-1.5 pe-2 rounded-lg text-sm "><Plus className="size-4" />{buttonText}</div>}
             title={sheetTitle ?? ""}
             description={sheetDescription}
             titleIcon={sheetIcon}
@@ -78,7 +77,7 @@ const PageHero = ({
         }
         {showBulkUploader &&
           <ReusableSheet
-            trigger={<ReusableTooltip trigger={<BulkUploadIcon className="size-7.5 cursor-pointer" />} tooltip="Bulk Upload" />}
+            trigger={<ReusableTooltip trigger={<FilesIcon className="cursor-pointer" />} tooltip="Bulk Upload" />}
             title={bulkUploaderTitle ?? ""}
             description={bulkUploaderDescription}
             titleIcon={sheetIcon}

@@ -33,10 +33,12 @@ import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
 import { SoftDeleteProjects } from "@/lib/actions/tenants/projects.actions";
 import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
-import { ProjectsForm } from "@/components/forms/projects-form";
+import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
 import { Project } from "@/database/tenant-schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DeleteIcon, EditIcon, ViewIcon } from "@/components/icons";
+import EditProjectForm from "@/components/forms/projects/edit-project-form";
+import ViewProjectForm from "@/components/forms/projects/view-project-form";
 
 export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const { showToast } = useToast()
@@ -285,17 +287,20 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                 trigger={<span className="hidden" />}
                                 title="Editing Project"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<p>This is my form</p>}
-                                saveButtonText="Save Project"
+                                formContent={<EditProjectForm project={project} />}
+                                hideFooter={true}
+                                hideHeader={true}
+                                popupClass="max-w-full"
                             />
                             <ReusableSheet
                                 triggerId={viewTriggerId}
                                 trigger={<span className="hidden" />}
                                 title="Viewing Project"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<p>This is my form</p>}
-                                saveButtonText="Save Project"
+                                formContent={<ViewProjectForm />}
                                 hideFooter={true}
+                                hideHeader={true}
+                                popupClass="max-w-full"
                             />
                             <ReusablePopover
                                 triggerId={deleteTriggerId}
@@ -504,13 +509,13 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 emptyDescription="No projects have been added so far!"
                 emptyContent={
                     <ReusableSheet
-                        trigger={<Button className="cursor-pointer"><Plus />New Project</Button>}
+                        trigger={<Button className="btn-primary"><Plus />New Project</Button>}
                         title="New Project"
                         titleIcon={<Archive className="w-5.5 h-5.5" />}
                         hideHeader={true}
                         hideFooter={true}
                         popupClass="max-w-full"
-                        formContent={<ProjectsForm />}
+                        formContent={<AddProjectsForm />}
                         saveButtonText="Save Project"
                     />
                 }

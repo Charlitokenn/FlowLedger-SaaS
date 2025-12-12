@@ -2,7 +2,7 @@
 
 import z from "zod";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { FormStep, MultiStepForm, type FormSelectOption } from "../reusable components/reusable-multistep-form";
+import { FormStep, MultiStepForm, type FormSelectOption } from "../../reusable components/reusable-multistep-form";
 import { SheetClose } from "@/components/ui/sheet";
 import { useToast } from "@/components/reusable components/toast-context";
 import { getLocationsDataset } from "@/lib/actions/catalog/location-options.actions";
@@ -115,7 +115,7 @@ const stepsBase: FormStep[] = [
             { name: "surveyNumber", label: "Survey Number", type: "text", placeholder: "SURV12345" },
             { name: "surveyDocument", label: "Survey Document", type: "file" },
             { name: "contractStatus", label: "Contract Status", type: "select", options: [...contractStatusOptions], placeholder: "Select Contract status" },
-            {name: "contractDate", label: "Contract Date", type: "date", placeholder: "YYYY-MM-DD" },
+            { name: "contractDate", label: "Contract Date", type: "date", placeholder: "YYYY-MM-DD" },
             { name: "originalContract", label: "Original Contract", type: "file" },
         ],
         columns: 3
@@ -136,7 +136,7 @@ const stepsBase: FormStep[] = [
     }
 ]
 
-export const ProjectsForm = () => {
+export const AddProjectsForm = () => {
     const { showToast } = useToast();
     const closeRef = useRef<HTMLButtonElement | null>(null);
     const [, startTransition] = useTransition();
@@ -204,10 +204,17 @@ export const ProjectsForm = () => {
             }
         };
 
+        const formatLocalYmd = (d: Date) => {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}`;
+        };
+
         const appendIfDate = (key: string, value: unknown) => {
             if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                // normalize to YYYY-MM-DD
-                fd.append(key, value.toISOString().slice(0, 10));
+                // IMPORTANT: avoid `toISOString()` here (UTC conversion can shift the calendar day).
+                fd.append(key, formatLocalYmd(value));
             }
         };
 
