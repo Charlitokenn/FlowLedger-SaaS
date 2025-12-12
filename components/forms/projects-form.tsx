@@ -1,10 +1,12 @@
 'use client'
 
 import z from "zod";
-import { useRef } from "react";
-import { FormStep, MultiStepForm } from "../reusable components/reusable-multistep-form";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { FormStep, MultiStepForm, type FormSelectOption } from "../reusable components/reusable-multistep-form";
 import { SheetClose } from "@/components/ui/sheet";
 import { useToast } from "@/components/reusable components/toast-context";
+import { getLocationsDataset } from "@/lib/actions/catalog/location-options.actions";
+import { CreateProject } from "@/lib/actions/tenants/projects.actions";
 
 const projectDetailsSchema = z.object({
     projectName: z.string().min(2, "Project name must be at least 2 characters"),
@@ -14,7 +16,7 @@ const projectDetailsSchema = z.object({
     street: z.string().min(2, "Street must be at least 2 characters"),
     sqmBought: z.string().min(1, "Square meters bought must be at least 100"),
     numberOfPlots: z.string().min(1, "There must be at least 1 plot"),
-    projectOwner: z.string().min(2, "Project owner must be at least 2 characters"),
+    projectOwner: z.string().optional(),
 });
 
 const acquisitionDetailsSchema = z.object({
@@ -28,20 +30,22 @@ const acquisitionDetailsSchema = z.object({
 });
 
 const documentationSchema = z.object({
-    tpStatus: z.enum(["In Progress", "Approved"], "Invalid TP status"),
-    surveyStatus: z.enum(["In Progress", "Approved"], "Invalid Survey status"),
-    tpNumber: z.string().min(2, "TP number must be at least 2 characters"),
-    surveyNumber: z.string().min(2, "Survey number must be at least 2 characters"),
-    originalContract: z.instanceof(File),
-    tpDocument: z.instanceof(File),
-    surveyDocument: z.instanceof(File),
+    tpStatus: z.enum(["In Progress", "Approved"], "Invalid TP status").default("In Progress"),
+    surveyStatus: z.enum(["In Progress", "Approved"], "Invalid Survey status").default("In Progress"),
+    tpNumber: z.string().optional(),
+    surveyNumber: z.string().optional(),
+    contractStatus: z.enum(["On File", "Unavailable"], "Invalid Contract status").default("On File").optional(),
+    contractDate: z.date().optional(),
+    originalContract: z.instanceof(File).optional(),
+    tpDocument: z.instanceof(File).optional(),
+    surveyDocument: z.instanceof(File).optional(),
 });
 
 const localGovtSchema = z.object({
     mwenyekitiName: z.string().min(2, "Mwenyekiti name must be at least 2 characters"),
-    mwenyekitiMobile: z.string().max(12, "Mobile must have 12 numbers").min(12, "Mobile must have 12 numbers"),
+    mwenyekitiMobile: z.string().min(12, "Enter valid mobile number"),
     mtendajiName: z.string().min(2, "Mtendaji name must be at least 2 characters"),
-    mtendajiMobile: z.string().max(12, "Mobile must have 12 numbers").min(12, "Mobile must have 12 numbers"),
+    mtendajiMobile: z.string().min(12, "Enter valid mobile number"),
     localGovtFee: z.coerce.number().min(1000, "Local government fee must be at least 1000"),
 })
 
@@ -50,26 +54,17 @@ const statusOptions = [
     { label: "Approved", value: "Approved" },
 ] as const;
 
-const regionOptions = [
-    { label: "Dar es Salaam", value: "Dar es Salaam" },
-    { label: "Arusha", value: "Arusha" },
+const contractStatusOptions = [
+    { label: "On File", value: "On File" },
+    { label: "Unavailable", value: "Unavailable" },
 ] as const;
 
-const districtsByRegion: Record<string, { label: string; value: string }[]> = {
-    "Dar es Salaam": [
-        { label: "Ilala", value: "Ilala" },
-        { label: "Kinondoni", value: "Kinondoni" },
-        { label: "Temeke", value: "Temeke" },
-        { label: "Kigamboni", value: "Kigamboni" },
-        { label: "Ubungo", value: "Ubungo" },
-    ],
-    Arusha: [
-        { label: "Arusha City", value: "Arusha City" },
-        { label: "Meru", value: "Meru" },
-    ],
+type LocationsState = {
+    regions: FormSelectOption[];
+    districtsByRegion: Record<string, FormSelectOption[]>;
 };
 
-const steps: FormStep[] = [
+const stepsBase: FormStep[] = [
     {
         id: "project",
         title: "Project Info",
@@ -77,17 +72,14 @@ const steps: FormStep[] = [
         schema: projectDetailsSchema,
         fields: [
             { name: "projectName", label: "Project Name", type: "text", placeholder: "Buyuni Project" },
-            { name: "region", label: "Region", type: "select", placeholder: "Select region", options: regionOptions },
+            { name: "region", label: "Region", type: "select", placeholder: "Select region", options: [] },
             {
                 name: "district",
                 label: "District",
                 type: "select",
                 placeholder: "Select district",
                 dependsOn: "region",
-                options: (values) => {
-                    const region = values.region as string | undefined;
-                    return region ? districtsByRegion[region] ?? [] : [];
-                },
+                options: [],
             },
             { name: "ward", label: "Ward", type: "text", placeholder: "Gulubwida" },
             { name: "street", label: "Street", type: "text", placeholder: "Gulubwida" },
@@ -118,11 +110,13 @@ const steps: FormStep[] = [
         fields: [
             { name: "tpStatus", label: "TP Status", type: "select", placeholder: "Select TP status", options: [...statusOptions] },
             { name: "tpNumber", label: "TP Number", type: "text", placeholder: "TP12345" },
-            { name: "tpDocument", label: "TP Document URL", type: "file", placeholder: "https://example.com/tp" },
+            { name: "tpDocument", label: "TP Document", type: "file" },
             { name: "surveyStatus", label: "Survey Status", type: "select", placeholder: "Select Survey status", options: [...statusOptions] },
             { name: "surveyNumber", label: "Survey Number", type: "text", placeholder: "SURV12345" },
-            { name: "surveyDocument", label: "Survey Document URL", type: "file", placeholder: "https://example.com/survey" },
-            { name: "originalContract", label: "Original Contract URL", type: "file", placeholder: "https://example.com/contract" },
+            { name: "surveyDocument", label: "Survey Document", type: "file" },
+            { name: "contractStatus", label: "Contract Status", type: "select", options: [...contractStatusOptions], placeholder: "Select Contract status" },
+            {name: "contractDate", label: "Contract Date", type: "date", placeholder: "YYYY-MM-DD" },
+            { name: "originalContract", label: "Original Contract", type: "file" },
         ],
         columns: 3
     },
@@ -133,9 +127,9 @@ const steps: FormStep[] = [
         schema: localGovtSchema,
         fields: [
             { name: "mwenyekitiName", label: "Mwenyekiti Name", type: "text", placeholder: "John Doe" },
-            { name: "mwenyekitiMobile", label: "Mwenyekiti Mobile", type: "phone", placeholder: "+255700123456", defaultCountry: "TZ" },
+            { name: "mwenyekitiMobile", label: "Mwenyekiti Mobile", type: "phone", placeholder: "255700123456" },
             { name: "mtendajiName", label: "Mtendaji Name", type: "text", placeholder: "Jane Smith" },
-            { name: "mtendajiMobile", label: "Mtendaji Mobile", type: "phone", placeholder: "+255700123456", defaultCountry: "TZ" },
+            { name: "mtendajiMobile", label: "Mtendaji Mobile", type: "phone", placeholder: "255700123456" },
             { name: "localGovtFee", label: "Local Government Fee (TZS)", type: "number", placeholder: "10000" },
         ],
         columns: 2
@@ -145,12 +139,132 @@ const steps: FormStep[] = [
 export const ProjectsForm = () => {
     const { showToast } = useToast();
     const closeRef = useRef<HTMLButtonElement | null>(null);
+    const [, startTransition] = useTransition();
+
+    const [locations, setLocations] = useState<LocationsState>({
+        regions: [],
+        districtsByRegion: {},
+    });
+
+    useEffect(() => {
+        startTransition(async () => {
+            const res = await getLocationsDataset();
+            if (!res.success) return;
+
+            setLocations({
+                regions: res.data.regions,
+                districtsByRegion: res.data.districtsByRegion,
+            });
+        });
+    }, []);
+
+    const stepsWithLocations = useMemo<FormStep[]>(() => {
+        const regionOpts = locations.regions;
+
+        return stepsBase.map((s) => {
+            if (s.id !== "project") return s;
+
+            return {
+                ...s,
+                fields: s.fields.map((f) => {
+                    if (f.type !== "select") return f;
+
+                    if (f.name === "region") {
+                        return { ...f, options: regionOpts };
+                    }
+
+                    if (f.name === "district") {
+                        return {
+                            ...f,
+                            // Make districts depend on selected region
+                            options: (values) => {
+                                const region = values.region as string | undefined;
+                                return region ? locations.districtsByRegion[region] ?? [] : [];
+                            },
+                        };
+                    }
+
+                    return f;
+                }),
+            };
+        });
+    }, [locations.districtsByRegion, locations.regions]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSubmit = async (data: any) => {
-        console.log("Form submitted:", data);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        const fd = new FormData();
+
+        const appendIfString = (key: string, value: unknown) => {
+            if (typeof value === "string") fd.append(key, value);
+        };
+
+        const appendIfNumber = (key: string, value: unknown) => {
+            if (typeof value === "number" && Number.isFinite(value)) {
+                fd.append(key, value.toString());
+            }
+        };
+
+        const appendIfDate = (key: string, value: unknown) => {
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                // normalize to YYYY-MM-DD
+                fd.append(key, value.toISOString().slice(0, 10));
+            }
+        };
+
+        const appendIfFile = (key: string, value: unknown) => {
+            if (value instanceof File && value.size > 0) {
+                fd.append(key, value);
+                return;
+            }
+            if (Array.isArray(value) && value[0] instanceof File) {
+                // If a field was configured as multiple, take the first file.
+                const first = value[0] as File;
+                if (first.size > 0) fd.append(key, first);
+            }
+        };
+
+        // Step: Project
+        appendIfString("projectName", data.projectName);
+        appendIfString("region", data.region);
+        appendIfString("district", data.district);
+        appendIfString("ward", data.ward);
+        appendIfString("street", data.street);
+        appendIfString("sqmBought", data.sqmBought);
+        appendIfString("numberOfPlots", data.numberOfPlots);
+        appendIfString("projectOwner", data.projectOwner);
+
+        // Step: Acquisition
+        appendIfDate("acquisitionDate", data.acquisitionDate);
+        appendIfString("acquisitionValue", data.acquisitionValue);
+        appendIfString("commitmentAmount", data.commitmentAmount);
+        appendIfString("supplierName", data.supplierName);
+
+        // Step: Documentation
+        appendIfString("tpStatus", data.tpStatus);
+        appendIfString("tpNumber", data.tpNumber);
+        appendIfFile("tpDocument", data.tpDocument);
+        appendIfString("surveyStatus", data.surveyStatus);
+        appendIfString("surveyNumber", data.surveyNumber);
+        appendIfFile("surveyDocument", data.surveyDocument);
+        appendIfFile("originalContract", data.originalContract);
+
+        // Step: Local Govt
+        appendIfString("mwenyekitiName", data.mwenyekitiName);
+        appendIfString("mwenyekitiMobile", data.mwenyekitiMobile);
+        appendIfString("mtendajiName", data.mtendajiName);
+        appendIfString("mtendajiMobile", data.mtendajiMobile);
+        appendIfNumber("localGovtFee", data.localGovtFee);
+
+        const res = await CreateProject(fd);
+        if (!res.success) {
+            showToast({
+                title: "Failed to create project",
+                description: res.error,
+                variant: "error",
+                showAction: false,
+            });
+            throw new Error(res.error);
+        }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,7 +278,7 @@ export const ProjectsForm = () => {
             <SheetClose render={<button ref={closeRef} className="hidden" />} />
 
             <MultiStepForm
-                steps={steps}
+                steps={stepsWithLocations}
                 onSubmit={handleSubmit}
                 onStepChange={handleStepChange}
                 showStepLabels={true}

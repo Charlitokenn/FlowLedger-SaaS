@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Popover as PopoverPrimitive } from "@base-ui-components/react/popover";
 
 import { cn } from "@/lib/utils";
@@ -10,8 +11,40 @@ type PopoverTriggerProps = PopoverPrimitive.Trigger.Props & {
   asChild?: boolean;
 };
 
-function PopoverTrigger(props: PopoverTriggerProps) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+function PopoverTrigger({ asChild, children, ...props }: PopoverTriggerProps) {
+  if (asChild) {
+    // Base UI uses a `render` prop (not Radix `asChild`).
+    // Map `asChild` -> `render` so the trigger element is the child itself.
+    if (!children || !Array.isArray(children) && !React.isValidElement(children)) {
+      return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+    }
+
+    const child = React.isValidElement(children)
+      ? children
+      : // If someone passes an array (rare), just take the first element.
+        (children as any[])[0];
+
+    const rendered = React.isValidElement(child)
+      ? React.cloneElement(child as any, {
+          "data-slot": "popover-trigger",
+        })
+      : child;
+
+    return (
+      <PopoverPrimitive.Trigger
+        {...props}
+        // When composing with another component (like our <Button />), assume it renders a native button.
+        nativeButton={props.nativeButton ?? true}
+        render={rendered as any}
+      />
+    );
+  }
+
+  return (
+    <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props}>
+      {children}
+    </PopoverPrimitive.Trigger>
+  );
 }
 
 function PopoverPopup({

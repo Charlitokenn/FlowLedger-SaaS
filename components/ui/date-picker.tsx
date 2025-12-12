@@ -32,7 +32,7 @@ function isValidDate(date: Date | undefined) {
     return !isNaN(date.getTime())
 }
 
-export function Calendar28() {
+export function DatePickerInput() {
     const [open, setOpen] = React.useState(false)
     const [date, setDate] = React.useState<Date | undefined>(
         new Date("2025-06-01")

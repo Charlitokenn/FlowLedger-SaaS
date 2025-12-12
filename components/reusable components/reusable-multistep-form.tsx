@@ -7,19 +7,29 @@ import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, ArrowLeft, Check, Loader2, Calendar as CalendarIcon, Upload, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Loader2,
+  Calendar as CalendarIcon,
+  Upload,
+  X,
+  ChevronsUpDown,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "../ui/button";
+import { Input as ShadcnInput } from "../ui/input";
 import { PhoneInput } from "../ui/base-phone-input";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
 
 // ============================================================================
 // Stepper Components
@@ -294,49 +304,49 @@ export type FormSelectOptionsResolver<TValues extends Record<string, any> = Reco
 
 export type FormField =
   | {
-      name: string;
-      label: string;
-      type: "text" | "email" | "password" | "number" | "tel" | "url";
-      placeholder?: string;
-      description?: string;
-    }
+    name: string;
+    label: string;
+    type: "text" | "email" | "password" | "number" | "tel" | "url";
+    placeholder?: string;
+    description?: string;
+  }
   | {
-      name: string;
-      label: string;
-      type: "date";
-      placeholder?: string;
-      description?: string;
-      min?: string;
-      max?: string;
-    }
+    name: string;
+    label: string;
+    type: "date";
+    placeholder?: string;
+    description?: string;
+    min?: string;
+    max?: string;
+  }
   | {
-      name: string;
-      label: string;
-      type: "select";
-      placeholder?: string;
-      description?: string;
-      /** If provided, the select will be disabled until this field (or fields) have a value. */
-      dependsOn?: string | string[];
-      /** Static options or a resolver function that can depend on other field values. */
-      options: ReadonlyArray<FormSelectOption> | FormSelectOptionsResolver;
-    }
+    name: string;
+    label: string;
+    type: "select";
+    placeholder?: string;
+    description?: string;
+    /** If provided, the select will be disabled until this field (or fields) have a value. */
+    dependsOn?: string | string[];
+    /** Static options or a resolver function that can depend on other field values. */
+    options: ReadonlyArray<FormSelectOption> | FormSelectOptionsResolver;
+  }
   | {
-      name: string;
-      label: string;
-      type: "file";
-      placeholder?: string;
-      description?: string;
-      accept?: string;
-      multiple?: boolean;
-    }
+    name: string;
+    label: string;
+    type: "file";
+    placeholder?: string;
+    description?: string;
+    accept?: string;
+    multiple?: boolean;
+  }
   | {
-      name: string;
-      label: string;
-      type: "phone";
-      placeholder?: string;
-      description?: string;
-      defaultCountry?: string;
-    };
+    name: string;
+    label: string;
+    type: "phone";
+    placeholder?: string;
+    description?: string;
+    defaultCountry?: string;
+  };
 
 export interface FormStep<TSchema extends z.ZodType = z.ZodType> {
   id: string;
@@ -383,19 +393,6 @@ const cn = (...classes: (string | boolean | undefined)[]) =>
 //   </button>
 // );
 
-const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...props }, ref) => (
-    <input
-      ref={ref}
-      className={cn(
-        "w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
-Input.displayName = "Input";
 
 function FileDropzone({
   id,
@@ -458,10 +455,12 @@ function FileDropzone({
         />
 
         <div className="min-w-0 flex items-center gap-3">
-          <span className={cn(
-            "flex size-9 items-center justify-center rounded-md border bg-background",
-            hasError && "border-destructive",
-          )}>
+          <span
+            className={cn(
+              "flex size-9 items-center justify-center rounded-md border bg-background",
+              hasError && "border-destructive",
+            )}
+          >
             <Upload className="size-4 text-muted-foreground" />
           </span>
 
@@ -475,7 +474,9 @@ function FileDropzone({
             </p>
             <p className="truncate text-xs text-muted-foreground">
               {files.length === 0
-                ? (accept ? `Accepted: ${accept}` : "")
+                ? accept
+                  ? `Accepted: ${accept}`
+                  : ""
                 : "Click to replace"}
             </p>
           </div>
@@ -501,6 +502,185 @@ function FileDropzone({
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+function SearchableSelectField({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  hasError,
+  ariaDescribedBy,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: ReadonlyArray<FormSelectOption>;
+  placeholder?: string;
+  disabled?: boolean;
+  hasError: boolean;
+  ariaDescribedBy?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  const selectedLabel = React.useMemo(() => {
+    return options.find((o) => o.value === value)?.label;
+  }, [options, value]);
+
+  return (
+    <div className="w-full">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            aria-invalid={hasError || undefined}
+            aria-describedby={ariaDescribedBy}
+            className={cn(
+              "w-full justify-between",
+              !value && "text-muted-foreground",
+              hasError && "border-destructive",
+            )}
+          >
+            <span className="truncate">
+              {selectedLabel ?? placeholder ?? "Select an option"}
+            </span>
+            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search..." />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              {options.map((opt) => (
+                <CommandItem
+                  key={opt.value}
+                  value={opt.label}
+                  disabled={opt.disabled}
+                  onSelect={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 size-4",
+                      opt.value === value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {opt.label}
+                </CommandItem>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+function DatePickerField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  min,
+  max,
+  hasError,
+  ariaDescribedBy,
+}: {
+  id: string;
+  value: Date | undefined;
+  onChange: (next: Date | undefined) => void;
+  placeholder?: string;
+  min?: string;
+  max?: string;
+  hasError: boolean;
+  ariaDescribedBy?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [month, setMonth] = React.useState<Date | undefined>(value);
+  const [textValue, setTextValue] = React.useState<string>(
+    value ? format(value, "PPP") : "",
+  );
+
+  const minDate = React.useMemo(() => (min ? new Date(min) : undefined), [min]);
+  const maxDate = React.useMemo(() => (max ? new Date(max) : undefined), [max]);
+
+  React.useEffect(() => {
+    setTextValue(value ? format(value, "PPP") : "");
+    setMonth(value);
+  }, [value]);
+
+  return (
+    <div className="relative flex gap-2 w-full">
+      <ShadcnInput
+        id={id}
+        value={textValue}
+        placeholder={placeholder ?? "Select date"}
+        className={cn("bg-background pr-10 w-full", hasError && "border-destructive")}
+        aria-invalid={hasError || undefined}
+        aria-describedby={ariaDescribedBy}
+        onChange={(e) => {
+          const nextText = e.target.value;
+          setTextValue(nextText);
+          const parsed = new Date(nextText);
+          if (!Number.isNaN(parsed.getTime())) {
+            onChange(parsed);
+            setMonth(parsed);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id={`${id}-date-picker`}
+            type="button"
+            variant="ghost"
+            className="absolute top-1/2 right-3 size-6 -translate-y-1/2"
+          >
+            <CalendarIcon className="size-3.5" />
+            <span className="sr-only">Select date</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto overflow-hidden p-0"
+          align="end"
+          alignOffset={-8}
+          sideOffset={10}
+        >
+          <Calendar
+            mode="single"
+            selected={value}
+            captionLayout="dropdown"
+            month={month}
+            onMonthChange={setMonth}
+            onSelect={(d) => {
+              onChange(d);
+              setTextValue(d ? format(d, "PPP") : "");
+              setOpen(false);
+            }}
+            disabled={(d) => {
+              if (minDate && d < minDate) return true;
+              if (maxDate && d > maxDate) return true;
+              return false;
+            }}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -550,6 +730,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
     control,
     getValues,
     setValue,
+    trigger,
     handleSubmit,
     formState: { errors },
     reset,
@@ -577,7 +758,12 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
 
       const exists = opts.some((o) => o.value === currentValue);
       if (!exists) {
-        setValue(f.name, "", { shouldDirty: true, shouldValidate: true });
+        // Mark touched + revalidate so errors are correct after dependency changes.
+        setValue(f.name, "", {
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true,
+        });
       }
     }
   }, [currentStep, currentStepConfig.fields, getValues, setValue, watchedValues]);
@@ -750,36 +936,20 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                             const disabled = isSelectDisabled(field, values, resolved);
 
                             return (
-                              <Select
+                              <SearchableSelectField
                                 value={(rhfField.value ?? "") as string}
-                                onValueChange={(value) => rhfField.onChange(value)}
+                                onChange={(next) => {
+                                  rhfField.onChange(next);
+                                  void trigger(field.name as any);
+                                }}
+                                options={resolved}
+                                placeholder={field.placeholder}
                                 disabled={disabled}
-                              >
-                                <SelectTrigger
-                                  id={field.name}
-                                  className={cn(
-                                    "w-full",
-                                    hasError && "border-destructive focus:ring-destructive",
-                                  )}
-                                  aria-invalid={hasError ? "true" : "false"}
-                                  aria-describedby={hasError ? `${field.name}-error` : undefined}
-                                >
-                                  <SelectValue
-                                    placeholder={field.placeholder ?? "Select an option"}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {resolved.map((opt) => (
-                                    <SelectItem
-                                      key={opt.value}
-                                      value={opt.value}
-                                      disabled={opt.disabled}
-                                    >
-                                      {opt.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                hasError={hasError}
+                                ariaDescribedBy={
+                                  hasError ? `${field.name}-error` : undefined
+                                }
+                              />
                             );
                           }}
                         />
@@ -794,8 +964,11 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                               // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               defaultCountry={field.defaultCountry as any}
                               value={rhfField.value}
-                              onChange={(v) => rhfField.onChange(v)}
-                              aria-invalid={hasError ? "true" : "false"}
+                              onChange={(v) => {
+                                rhfField.onChange(v);
+                                void trigger(field.name as any);
+                              }}
+                              aria-invalid={hasError || undefined}
                               aria-describedby={hasError ? `${field.name}-error` : undefined}
                             />
                           )}
@@ -805,49 +978,23 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                           control={control}
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           name={field.name as any}
-                          render={({ field: rhfField }) => {
-                            const value = rhfField.value as Date | undefined;
-                            const minDate = field.min ? new Date(field.min) : undefined;
-                            const maxDate = field.max ? new Date(field.max) : undefined;
-
-                            return (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal",
-                                      !value && "text-muted-foreground",
-                                      hasError && "border-destructive",
-                                    )}
-                                    aria-invalid={hasError ? "true" : "false"}
-                                    aria-describedby={hasError ? `${field.name}-error` : undefined}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {value ? (
-                                      format(value, "PPP")
-                                    ) : (
-                                      <span>{field.placeholder ?? "Pick a date"}</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={value}
-                                    onSelect={(d) => rhfField.onChange(d)}
-                                    initialFocus
-                                    disabled={(d) => {
-                                      if (minDate && d < minDate) return true;
-                                      if (maxDate && d > maxDate) return true;
-                                      return false;
-                                    }}
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            );
-                          }}
+                          render={({ field: rhfField }) => (
+                            <DatePickerField
+                              id={field.name}
+                              value={rhfField.value as Date | undefined}
+                              onChange={(d) => {
+                                rhfField.onChange(d);
+                                void trigger(field.name as any);
+                              }}
+                              placeholder={field.placeholder}
+                              min={field.min}
+                              max={field.max}
+                              hasError={hasError}
+                              ariaDescribedBy={
+                                hasError ? `${field.name}-error` : undefined
+                              }
+                            />
+                          )}
                         />
                       ) : field.type === "file" ? (
                         <Controller
@@ -869,16 +1016,14 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
                           )}
                         />
                       ) : (
-                        <Input
+                        <ShadcnInput
                           id={field.name}
                           type={field.type}
                           placeholder={field.placeholder}
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           {...register(field.name as any)}
-                          className={cn(
-                            hasError && "border-destructive focus:ring-destructive",
-                          )}
-                          aria-invalid={hasError ? "true" : "false"}
+                          className={cn(hasError && "has-aria-invalid:border-destructive")}
+                          aria-invalid={hasError || undefined}
                           aria-describedby={hasError ? `${field.name}-error` : undefined}
                         />
                       )}
