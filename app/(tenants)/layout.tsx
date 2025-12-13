@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { protocol, rootDomain } from "@/lib/utils";
 import type { SessionClaims } from "@/types/auth";
+import { Settings } from "lucide-react";
 
 export default async function TenantLayout({
     children
@@ -34,7 +35,20 @@ export default async function TenantLayout({
                         <SidebarTrigger className="-ms-4" />
                     </div>
                     <div className="flex gap-3 ml-auto px-6">
-                        {isAdmin && <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/dashboard" />}
+                        {isAdmin &&
+                            <OrganizationSwitcher
+                                hidePersonal
+                                afterSelectOrganizationUrl="/dashboard"
+                            >
+                                <OrganizationSwitcher.OrganizationProfilePage
+                                    label="Custom Page"
+                                    url="custom"
+                                    labelIcon={<Settings />}
+                                >
+                                    <div>Hello There</div>
+                                </OrganizationSwitcher.OrganizationProfilePage>
+                            </OrganizationSwitcher>
+                        }
                         <UserButton afterSignOutUrl={`${protocol}://${rootDomain}`} />
                     </div>
                 </header>

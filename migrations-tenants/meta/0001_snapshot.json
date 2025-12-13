@@ -1,6 +1,6 @@
 {
-  "id": "1435ea87-5e16-4ebb-82c3-47e996d9bbab",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "a2580bf1-84e9-4220-ab5b-e9af82041f5a",
+  "prevId": "1435ea87-5e16-4ebb-82c3-47e996d9bbab",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -80,10 +80,10 @@
       "uniqueConstraints": {
         "accounts_account_number_unique": {
           "name": "accounts_account_number_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "account_number"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -255,10 +255,10 @@
       "uniqueConstraints": {
         "contacts_clientPhoto_unique": {
           "name": "contacts_clientPhoto_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "clientPhoto"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -354,9 +354,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "plots_contact_idx": {
           "name": "plots_contact_idx",
@@ -369,47 +369,47 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "plots_project_id_projects_id_fk": {
           "name": "plots_project_id_projects_id_fk",
           "tableFrom": "plots",
-          "tableTo": "projects",
           "columnsFrom": [
             "project_id"
           ],
+          "tableTo": "projects",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "restrict"
         },
         "plots_contact_id_contacts_id_fk": {
           "name": "plots_contact_id_contacts_id_fk",
           "tableFrom": "plots",
-          "tableTo": "contacts",
           "columnsFrom": [
             "contact_id"
           ],
+          "tableTo": "contacts",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "plots_surveyed_plot_number_unique": {
           "name": "plots_surveyed_plot_number_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "surveyed_plot_number"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -685,10 +685,10 @@
     }
   },
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

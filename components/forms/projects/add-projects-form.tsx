@@ -15,7 +15,7 @@ const projectDetailsSchema = z.object({
     ward: z.string().min(2, "Ward must be at least 2 characters"),
     street: z.string().min(2, "Street must be at least 2 characters"),
     sqmBought: z.string().min(1, "Square meters bought must be at least 100"),
-    numberOfPlots: z.string().min(1, "There must be at least 1 plot"),
+    numberOfPlots: z.string().max(200, "There must be at least 1 plot"),
     projectOwner: z.string().optional(),
 });
 
