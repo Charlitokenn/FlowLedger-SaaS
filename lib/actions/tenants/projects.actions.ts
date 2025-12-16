@@ -2,10 +2,10 @@
 
 import { auth } from "@clerk/nextjs/server";
 import crypto from "crypto";
-import { projects, type NewProject } from "@/database/tenant-schema";
+import { plots, Project, projects, type NewProject } from "@/database/tenant-schema";
 import { deleteR2Object, getPresignedGetUrl, uploadPdfToR2 } from "@/lib/r2/r2.server";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, asc, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -13,13 +13,21 @@ export const GetAllProjects = async () => {
     try {
         const { db } = await getTenantDbForRequest();
 
-        const results = await db
-            .select()
-            .from(projects)
-            .where(eq(projects.isDeleted, false))
-            .orderBy(desc(projects.acquisitionDate));
+        const project = await db.query.projects.findMany({
+            where: (p, { eq }) => eq(p.isDeleted, false),
+            with: {
+                plots: {
+                    where: (pl, { eq }) => eq(pl.isDeleted, false),
+                    orderBy: (pl, { asc }) => [asc(pl.plotNumber)],
+                },
+            },
+        });
 
-        return { success: true, data: results };
+        if (!project) {
+            return { success: false, error: "Project not found" };
+        }
+
+        return { success: true, data: project };
     } catch (error) {
         console.error("Error fetching projects:", error);
         return {
@@ -253,6 +261,11 @@ export async function CreateProject(formData: FormData) {
 
         const input = parsed.data;
 
+        const numberOfPlotsInt = Number.parseInt(input.numberOfPlots, 10);
+        if (!Number.isFinite(numberOfPlotsInt)) {
+            return { success: false, error: "Invalid number of plots" } as const;
+        }
+
         // Generate an id up-front so we can namespace uploads under the project.
         const projectId = crypto.randomUUID();
 
@@ -304,7 +317,7 @@ export async function CreateProject(formData: FormData) {
             ward: input.ward,
             street: input.street,
             sqmBought: input.sqmBought,
-            numberOfPlots: input.numberOfPlots,
+            numberOfPlots: numberOfPlotsInt,
             projectOwner: input.projectOwner,
 
             committmentAmount: input.commitmentAmount,
@@ -404,6 +417,15 @@ export async function UpdateProject(formData: FormData) {
             return { success: false, error: "Project not found" } as const;
         }
 
+        const nextNumberOfPlots =
+            input.numberOfPlots != null
+                ? Number.parseInt(input.numberOfPlots, 10)
+                : current.numberOfPlots;
+
+        if (input.numberOfPlots != null && !Number.isFinite(nextNumberOfPlots)) {
+            return { success: false, error: "Invalid number of plots" } as const;
+        }
+
         // Optional doc replacements
         const originalContract = getFile(formData, "originalContract");
         const tpDocument = getFile(formData, "tpDocument");
@@ -466,7 +488,7 @@ export async function UpdateProject(formData: FormData) {
                 ward: input.ward ?? current.ward,
                 street: input.street ?? current.street,
                 sqmBought: input.sqmBought ?? current.sqmBought,
-                numberOfPlots: input.numberOfPlots ?? current.numberOfPlots,
+                numberOfPlots: nextNumberOfPlots,
                 projectOwner: input.projectOwner ?? current.projectOwner,
 
                 committmentAmount: input.commitmentAmount ?? current.committmentAmount,

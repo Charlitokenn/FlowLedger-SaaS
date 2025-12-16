@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { catalogDb } from '@/database/drizzle-catalog';
 import { tenants } from '@/database/catalog-schema';
@@ -8,8 +8,10 @@ import { setupTenantSchema } from './tenant-setup';
 import * as schema from '@/database/tenant-schema';
 import { encrypt, decrypt } from './encryption';
 
+export type TenantDb = NeonHttpDatabase<typeof schema>;
+
 // Connection cache to avoid recreating connections
-const connectionCache = new Map<string, ReturnType<typeof drizzle>>();
+const connectionCache = new Map<string, TenantDb>();
 
 /**
  * Get or create tenant database connection
@@ -19,7 +21,7 @@ export async function getTenantDb(
     clerkOrgId: string,
     clerkOrgSlug: string,
     orgName: string
-) {
+): Promise<TenantDb> {
     // Check cache first
     if (connectionCache.has(clerkOrgId)) {
         return connectionCache.get(clerkOrgId)!;
@@ -78,7 +80,7 @@ export async function getTenantDb(
 
     // Create connection
     const sql = neon(connectionString);
-    const db = drizzle(sql, { schema });
+    const db: TenantDb = drizzle(sql, { schema });
 
     // Cache it
     connectionCache.set(clerkOrgId, db);

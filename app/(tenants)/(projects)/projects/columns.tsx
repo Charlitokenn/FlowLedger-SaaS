@@ -49,6 +49,9 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const [deletingRowIds, setDeletingRowIds] = React.useState<Set<string>>(new Set());
     const [hiddenProjectIds, setHiddenProjectIds] = React.useState<Set<string>>(new Set());
 
+    const [viewProject, setViewProject] = React.useState<Project | null>(null);
+    const viewTriggerId = "projects-view-sheet";
+
     const filteredData = React.useMemo<Project[]>(() => {
         if (!data) return [];
 
@@ -276,7 +279,6 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 cell: function Cell({ row }) {
                     const project = row.original as Project;
                     const editTriggerId = `project-edit-${project.id}`;
-                    const viewTriggerId = `project-view-${project.id}`;
                     const deleteTriggerId = `project-delete-${project.id}`;
 
                     return (
@@ -288,16 +290,6 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                 title="Editing Project"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
                                 formContent={<EditProjectForm project={project} />}
-                                hideFooter={true}
-                                hideHeader={true}
-                                popupClass="max-w-full"
-                            />
-                            <ReusableSheet
-                                triggerId={viewTriggerId}
-                                trigger={<span className="hidden" />}
-                                title="Viewing Project"
-                                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<ViewProjectForm />}
                                 hideFooter={true}
                                 hideHeader={true}
                                 popupClass="max-w-full"
@@ -348,10 +340,19 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                                     <DropdownMenuItem
                                         className="cursor-pointer"
                                         onSelect={() => {
-                                            const btn = document.querySelector<HTMLButtonElement>(
-                                                `[data-sheet-trigger-id='${viewTriggerId}']`,
-                                            );
-                                            btn?.click();
+                                            // Set the selected project, then open the shared view sheet.
+                                            setViewProject(project);
+                                            setTimeout(() => {
+                                                const btn = document.querySelector<HTMLButtonElement>(
+                                                    `[data-sheet-trigger-id='${viewTriggerId}']`,
+                                                );
+
+                                                // If it's already open, don't toggle it closed.
+                                                const isOpen = btn?.getAttribute("aria-expanded") === "true";
+                                                if (!isOpen) {
+                                                    btn?.click();
+                                                }
+                                            }, 0);
                                         }}
                                     >
                                         <ViewIcon className="size-4.5" />
@@ -503,6 +504,18 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
 
     return (
         <div className="data-table-container">
+            {/* Shared view sheet (opened from the row dropdown) */}
+            <ReusableSheet
+                triggerId={viewTriggerId}
+                trigger={<span className="hidden" />}
+                title={viewProject ? `Viewing ${viewProject.projectName}` : "Viewing Project"}
+                titleIcon={<SquarePen className="w-5.5 h-5.5" />}
+                formContent={viewProject ? <ViewProjectForm project={viewProject} /> : null}
+                hideFooter={true}
+                hideHeader={true}
+                popupClass="max-w-full"
+            />
+
             <DataTable
                 table={table}
                 emptyTitle="Add Projects"

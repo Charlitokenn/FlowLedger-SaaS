@@ -117,6 +117,9 @@ export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Plot = typeof plots.$inferSelect;
 export type NewPlot = typeof plots.$inferInsert;
+export type ProjectWithPlots = Project & {
+  plots: Plot[];
+};
 
 // Relations
 export const projectsRelations = relations(projects, ({ many }) => ({
