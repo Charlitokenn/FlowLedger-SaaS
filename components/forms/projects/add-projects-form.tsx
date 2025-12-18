@@ -7,6 +7,7 @@ import { SheetClose } from "@/components/ui/sheet";
 import { useToast } from "@/components/reusable components/toast-context";
 import { getLocationsDataset } from "@/lib/actions/catalog/location-options.actions";
 import { CreateProject } from "@/lib/actions/tenants/projects.actions";
+import { useRouter } from "next/navigation";
 
 const projectDetailsSchema = z.object({
     projectName: z.string().min(2, "Project name must be at least 2 characters"),
@@ -137,6 +138,7 @@ const stepsBase: FormStep[] = [
 ]
 
 export const AddProjectsForm = () => {
+    const router = useRouter();
     const { showToast } = useToast();
     const closeRef = useRef<HTMLButtonElement | null>(null);
     const [, startTransition] = useTransition();
@@ -272,6 +274,8 @@ export const AddProjectsForm = () => {
             });
             throw new Error(res.error);
         }
+        //TODO - Referesh after adding projects not working
+        router.refresh();
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

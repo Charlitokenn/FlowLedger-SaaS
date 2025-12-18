@@ -8,6 +8,20 @@
       "when": 1765658622317,
       "tag": "0000_create_plots_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765881461602,
+      "tag": "0001_low_power_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765965622997,
+      "tag": "0002_dapper_bedlam",
+      "breakpoints": true
     }
   ]
 }

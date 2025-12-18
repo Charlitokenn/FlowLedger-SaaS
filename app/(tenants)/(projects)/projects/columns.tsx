@@ -3,9 +3,6 @@
 import { type Column, type ColumnDef } from "@tanstack/react-table";
 import {
     Archive,
-    DownloadIcon,
-    Edit,
-    Eye,
     Loader2,
     MoreHorizontal,
     Plus,
@@ -36,7 +33,7 @@ import ReusablePopover from "@/components/reusable components/reusable-popover";
 import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
 import { Project } from "@/database/tenant-schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DeleteIcon, EditIcon, ViewIcon } from "@/components/icons";
+import { DeleteIcon, DownloadIcon, EditIcon, ViewIcon } from "@/components/icons";
 import EditProjectForm from "@/components/forms/projects/edit-project-form";
 import ViewProjectForm from "@/components/forms/projects/view-project-form";
 
@@ -549,7 +546,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         <Separator orientation="vertical" />
                         <ReusableTooltip
                             trigger={<DownloadIcon onClick={handleDownloadCSV} className="text-gray-700 size-5 rounded p-0.3 cursor-pointer" />}
-                            tooltip={`Export ${selectedRowsCount} Selected Projects`}
+                            tooltip={`Export ${selectedRowsCount > 1 ? `${selectedRowsCount} Selected Projects` : "Selected Project" }`}
                         />
                         <ReusableTooltip
                             trigger={

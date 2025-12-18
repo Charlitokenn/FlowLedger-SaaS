@@ -190,7 +190,7 @@
   }
 
   .badge {
-    @apply text-xs! rounded-xl! dark:bg-muted-foreground! dark:text-foreground!
+    @apply text-xs! rounded-xl! dark:bg-muted-foreground dark:text-foreground
   }
 
   /* Legacy auth/submit helpers (cannot @apply custom classes here, so inline utilities) */

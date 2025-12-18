@@ -19,23 +19,24 @@ function PopoverTrigger({ asChild, children, ...props }: PopoverTriggerProps) {
       return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
     }
 
-    const child = React.isValidElement(children)
-      ? children
-      : // If someone passes an array (rare), just take the first element.
-        (children as any[])[0];
+    const child = Array.isArray(children) ? children[0] : children;
 
-    const rendered = React.isValidElement(child)
-      ? React.cloneElement(child as any, {
-          "data-slot": "popover-trigger",
-        })
-      : child;
+    if (!React.isValidElement(child)) {
+      return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+    }
+
+    const rendered = React.cloneElement(child, {
+      'data-slot': 'popover-trigger',
+    });
+
+    type TriggerRender = PopoverPrimitive.Trigger.Props['render'];
 
     return (
       <PopoverPrimitive.Trigger
         {...props}
         // When composing with another component (like our <Button />), assume it renders a native button.
         nativeButton={props.nativeButton ?? true}
-        render={rendered as any}
+        render={rendered as TriggerRender}
       />
     );
   }

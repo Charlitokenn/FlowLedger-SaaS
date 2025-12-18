@@ -9,13 +9,13 @@ BEGIN
         -- Rely on table defaults for id/availability/is_deleted/timestamps
         INSERT INTO public.plots (
             plot_number,
-            surveyed_plot_number,
+            -- surveyed_plot_number,
             unsurveyed_size,
             project_id
         )
         SELECT
             gs::numeric,
-            (NEW.id::text || '-' || gs::text),
+            -- (NEW.id::text || '-' || gs::text),
             0::numeric,
             NEW.id
         FROM generate_series(1, NEW.number_of_plots) AS gs;

@@ -15,6 +15,7 @@ export const GetAllProjects = async () => {
 
         const project = await db.query.projects.findMany({
             where: (p, { eq }) => eq(p.isDeleted, false),
+            orderBy: (p, { desc }) => [desc(p.acquisitionDate)],
             with: {
                 plots: {
                     where: (pl, { eq }) => eq(pl.isDeleted, false),

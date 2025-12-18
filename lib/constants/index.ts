@@ -24,6 +24,10 @@ export const SIDEBAR_MENU_ITEMS = {
       icon: CartIcon,
       items: [
         {
+          title: "Contracts",
+          url: "/contracts",
+        },
+        {
           title: "Daily Sales",
           url: "/daily-sales",
         },

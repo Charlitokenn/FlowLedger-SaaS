@@ -81,8 +81,10 @@ export default function CustomToastItem({
   }, [onAction])
 
   useEffect(() => {
-    // Ensure the toast is opened when mounted from context.
-    if (autoOpen) setOpen(true)
+    // Avoid synchronous setState in an effect (can cause cascading renders in some setups).
+    if (!autoOpen) return
+    const t = setTimeout(() => setOpen(true), 0)
+    return () => clearTimeout(t)
   }, [autoOpen])
 
   useEffect(() => {

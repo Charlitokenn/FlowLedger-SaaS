@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,72 +38,142 @@ type StepState = "completed" | "active" | "inactive";
 interface CsvStepperProps {
   currentStep: number;
   steps: { title: string; description?: string }[];
+  orientation?: "vertical" | "horizontal";
 }
 
-function CsvStepper({ currentStep, steps }: CsvStepperProps) {
+function CsvStepper({ currentStep, steps, orientation = "vertical" }: CsvStepperProps) {
+  const isHorizontal = orientation === "horizontal";
+
   return (
-    <div className="flex flex-col h-full min-w-[220px]" aria-label="Upload steps">
-      {steps.map((step, index) => {
-        const stepIndex = index + 1;
-        const state: StepState =
-          stepIndex < currentStep
-            ? "completed"
-            : stepIndex === currentStep
-              ? "active"
-              : "inactive";
+    <div
+      className={cn(
+        "w-full min-w-0",
+        isHorizontal ? "flex" : "flex flex-col h-full",
+      )}
+      aria-label="Upload steps"
+    >
+      {isHorizontal ? (
+        <ScrollArea className="w-full">
+          <div className="flex items-start gap-4 pb-3">
+            {steps.map((step, index) => {
+              const stepIndex = index + 1;
+              const state: StepState =
+                stepIndex < currentStep
+                  ? "completed"
+                  : stepIndex === currentStep
+                    ? "active"
+                    : "inactive";
 
-        return (
-          <div key={step.title} className="flex items-start gap-3 relative flex-1">
-            {/* Indicator */}
-            <div className="flex flex-col items-center h-full">
-              <span
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors shrink-0",
-                  state === "active" && "border-primary bg-primary text-primary-foreground",
-                  state === "completed" && "border-green-500 bg-green-500 text-white",
-                  state === "inactive" && "border-gray-300 bg-background text-gray-500",
-                )}
-                aria-current={state === "active" ? "step" : undefined}
-              >
-                {state === "completed" ? (
-                  <Check className="size-4 stroke-3" />
-                ) : (
-                  stepIndex
-                )}
-              </span>
+              return (
+                <div key={step.title} className="flex items-center gap-3">
+                  {/* Indicator + label */}
+                  <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                    <span
+                      className={cn(
+                        "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors shrink-0",
+                        state === "active" && "border-primary bg-primary text-primary-foreground",
+                        state === "completed" && "border-green-500 bg-green-500 text-white",
+                        state === "inactive" && "border-gray-300 bg-background text-gray-500",
+                      )}
+                      aria-current={state === "active" ? "step" : undefined}
+                    >
+                      {state === "completed" ? (
+                        <Check className="size-4 stroke-3" />
+                      ) : (
+                        stepIndex
+                      )}
+                    </span>
 
-              {/* Separator line */}
-              {index < steps.length - 1 && (
-                <div
-                  className={cn(
-                    "mt-2 w-0.5 flex-1 transition-colors",
-                    state === "completed" ? "bg-green-500" : "bg-gray-300"
+                    <p
+                      className={cn(
+                        "text-xs font-medium text-center leading-tight",
+                        state === "inactive" ? "text-muted-foreground" : "text-foreground",
+                      )}
+                      title={step.description}
+                    >
+                      {step.title}
+                    </p>
+                  </div>
+
+                  {/* Horizontal separator line */}
+                  {index < steps.length - 1 && (
+                    <div
+                      className={cn(
+                        "mt-[-14px] h-0.5 w-10 transition-colors",
+                        state === "completed" ? "bg-green-500" : "bg-gray-300",
+                      )}
+                      aria-hidden="true"
+                    />
                   )}
-                />
-              )}
-            </div>
-
-            {/* Label */}
-            <div className="space-y-1 pt-1">
-              <p
-                className={cn(
-                  "text-sm font-medium transition-colors",
-                  state === "active" && "text-foreground",
-                  state === "completed" && "text-foreground",
-                  state === "inactive" && "text-muted-foreground",
-                )}
-              >
-                {step.title}
-              </p>
-              {step.description && (
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {step.description}
-                </p>
-              )}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      ) : (
+        steps.map((step, index) => {
+          const stepIndex = index + 1;
+          const state: StepState =
+            stepIndex < currentStep
+              ? "completed"
+              : stepIndex === currentStep
+                ? "active"
+                : "inactive";
+
+          return (
+            <div key={step.title} className="flex items-start gap-3 relative flex-1">
+              {/* Indicator */}
+              <div className="flex flex-col items-center h-full">
+                <span
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors shrink-0",
+                    state === "active" && "border-primary bg-primary text-primary-foreground",
+                    state === "completed" && "border-green-500 bg-green-500 text-white",
+                    state === "inactive" && "border-gray-300 bg-background text-gray-500",
+                  )}
+                  aria-current={state === "active" ? "step" : undefined}
+                >
+                  {state === "completed" ? (
+                    <Check className="size-4 stroke-3" />
+                  ) : (
+                    stepIndex
+                  )}
+                </span>
+
+                {/* Separator line */}
+                {index < steps.length - 1 && (
+                  <div
+                    className={cn(
+                      "mt-2 w-0.5 flex-1 transition-colors",
+                      state === "completed" ? "bg-green-500" : "bg-gray-300",
+                    )}
+                  />
+                )}
+              </div>
+
+              {/* Label */}
+              <div className="space-y-1 pt-1">
+                <p
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    state === "active" && "text-foreground",
+                    state === "completed" && "text-foreground",
+                    state === "inactive" && "text-muted-foreground",
+                  )}
+                >
+                  {step.title}
+                </p>
+                {step.description && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {step.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -116,7 +186,7 @@ export default CsvStepper;
 
 export type CsvColumnType = "string" | "number" | "boolean" | "date" | "enum";
 
-export interface CsvFieldConfig<TInsert extends Record<string, any>> {
+export interface CsvFieldConfig<TInsert extends Record<string, unknown>> {
   /** Key from the inferred Drizzle insert type, e.g. keyof NewContact */
   key: keyof TInsert & string;
   /** Human label to show in the UI; falls back to prettified key */
@@ -133,7 +203,7 @@ export interface CsvFieldConfig<TInsert extends Record<string, any>> {
   parse?: (raw: string) => TInsert[keyof TInsert] | null | undefined;
 }
 
-export interface CsvUploaderProps<TInsert extends Record<string, any>> {
+export interface CsvUploaderProps<TInsert extends Record<string, unknown>> {
   /** Name of the entity being uploaded, e.g. "Contacts". Only used for copy. */
   entityName: string;
   /** Configuration for the columns based on Drizzle's $inferInsert type. */
@@ -229,7 +299,7 @@ function basicCsvParse(text: string): ParsedCsv {
   return { headers, rows: dataRows };
 }
 
-function defaultParseByType(type: CsvColumnType, raw: string): any {
+function defaultParseByType(type: CsvColumnType, raw: string): unknown {
   const value = raw.trim();
   if (value === "") return null;
 
@@ -259,7 +329,7 @@ function defaultParseByType(type: CsvColumnType, raw: string): any {
 // Main Reusable CSV Uploader
 // ============================================================================
 
-export function ReusableCSVUploader<TInsert extends Record<string, any>>({
+export function ReusableCSVUploader<TInsert extends Record<string, unknown>>({
   entityName,
   fields,
   maxFileSizeMb = 5,
@@ -275,6 +345,26 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // This uploader is often rendered inside a narrow Sheet on desktop, where viewport-based
+  // breakpoints (md/lg) won't reflect the actual available width.
+  // Use element width (ResizeObserver) to decide when to show the stepper on the left.
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [isWideLayout, setIsWideLayout] = useState(false);
+
+  useEffect(() => {
+    if (!layoutRef.current) return;
+
+    const el = layoutRef.current;
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      // Match Tailwind's `lg` breakpoint (1024px) but based on container width.
+      setIsWideLayout(width >= 1024);
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const { showToast } = useToast()
 
@@ -335,18 +425,55 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
       setCsvRows(parsed.rows);
 
       // Heuristic auto-mapping: try to match by label or key.
-      const initialMapping: Record<string, string | "__ignore" | null> = {};
-      for (const field of fields) {
-        const candidates = [field.label, field.key].filter(Boolean) as string[];
-        const found = parsed.headers.find((h) => {
-          const normalizedHeader = h.toLowerCase().replace(/\s+/g, "");
-          return candidates.some((c) =>
-            normalizedHeader.includes(c.toLowerCase().replace(/\s+/g, "")),
-          );
-        });
+      // NOTE: avoid substring matching (e.g. "unsurveyedSize" contains "surveyedSize").
+      const toTokens = (input: string) =>
+        input
+          .replace(/([a-z])([A-Z])/g, "$1 $2")
+          .replace(/[^a-zA-Z0-9]+/g, " ")
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
 
-        initialMapping[field.key] = found ?? null;
+      const normalize = (input: string) => toTokens(input).join(" ");
+
+      const scoreMatch = (header: string, candidate: string) => {
+        const hNorm = normalize(header);
+        const cNorm = normalize(candidate);
+        if (!hNorm || !cNorm) return 0;
+        if (hNorm === cNorm) return 100;
+
+        const hTokens = toTokens(header);
+        const cTokens = toTokens(candidate);
+        if (cTokens.length && cTokens.every((t) => hTokens.includes(t))) return 50;
+        return 0;
+      };
+
+      const initialMapping: Record<string, string | "__ignore" | null> = {};
+      const usedHeaders = new Set<string>();
+
+      for (const field of fields) {
+        const candidates = [
+          field.label,
+          addSpacesBeforeCapitals(field.key),
+          field.key,
+        ].filter(Boolean) as string[];
+
+        const scored = parsed.headers
+          .map((h) => {
+            const bestScore = Math.max(...candidates.map((c) => scoreMatch(h, c)));
+            return { header: h, score: bestScore };
+          })
+          .filter((x) => x.score > 0)
+          .sort((a, b) => b.score - a.score || a.header.length - b.header.length);
+
+        const firstUnused = scored.find((s) => !usedHeaders.has(s.header));
+        const chosen = (firstUnused ?? scored[0])?.header;
+
+        initialMapping[field.key] = chosen ?? null;
+        if (chosen) usedHeaders.add(chosen);
       }
+
       setMapping(initialMapping);
       setStep(2);
     },
@@ -380,7 +507,9 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
 
     const nonEmptyRows = csvRows.filter((row) => !isRowEmpty(row));
     const mappedRows: TInsert[] = [];
-    for (const row of nonEmptyRows.slice(0, 5)) {
+
+    // Build a full mapped preview so the user can verify *all* rows before upload.
+    for (const row of nonEmptyRows) {
       const record: Record<string, unknown> = {};
 
       for (const field of fields) {
@@ -463,7 +592,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
           return;
         }
 
-        record[field.key] = parsedValue as any;
+        record[field.key] = parsedValue as unknown;
       }
 
       resultRows.push(record as TInsert);
@@ -493,18 +622,34 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
       );
       setIsSubmitting(false);
     }
-  }, [csvHeaders, csvRows, fields, mapping, onSubmit, requiredFieldsMissing]);
+  }, [csvHeaders, csvRows, entityName, fields, mapping, onSubmit, requiredFieldsMissing, showToast]);
 
   const dropzoneLabelId = "csv-upload-dropzone-label";
 
   return (
-    <div className="flex flex-col gap-6 m-4 md:flex-row">
+    <div
+      ref={layoutRef}
+      className={cn(
+        "flex gap-6 m-4",
+        isWideLayout ? "flex-row" : "flex-col",
+      )}
+    >
       {/* Stepper */}
-      <div className="mt-2">
-        <CsvStepper currentStep={step} steps={steps} />
+      <div className={cn("mt-2", isWideLayout ? "min-w-[220px] w-auto" : "w-full")}>
+        <CsvStepper
+          currentStep={step}
+          steps={steps}
+          orientation={isWideLayout ? "vertical" : "horizontal"}
+        />
       </div>
 
-      <div className="border border-dashed mb-16 border-muted-foreground/40" />
+      {/* Divider (horizontal when stacked, vertical when side-by-side) */}
+      <div
+        className={cn(
+          "border-dashed border-muted-foreground/40",
+          isWideLayout ? "w-px self-stretch border-l" : "h-px w-full border-t",
+        )}
+      />
 
       <div className="flex-1 space-y-6 mt-2">
         {/* Step content */}
@@ -530,7 +675,8 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
               }}
               onDrop={onDrop}
               className={cn(
-                "flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-10 text-center transition-colors h-[480px] cursor-pointer",
+                "flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 text-center transition-colors cursor-pointer",
+                isWideLayout ? "h-[480px] py-10" : "h-[320px] py-6",
                 dragActive && "border-primary bg-primary/5",
               )}
             >
@@ -704,7 +850,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
             <div className="space-y-1">
               <h2 className="text-base font-semibold">Confirm mapping</h2>
               <p className="text-xs text-muted-foreground">
-                Review how the first 5 rows will be imported into {entityName}.
+                Review how your CSV rows will be imported into {entityName}.
               </p>
             </div>
 
@@ -728,9 +874,9 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium">Sample rows</span>
+                <span className="font-medium">Rows to import</span>
                 <span className="text-muted-foreground">
-                  Showing up to 5 of {csvRows.length} row{csvRows.length === 1 ? "" : "s"}
+                  Showing {preview.length} of {preview.length} row{preview.length === 1 ? "" : "s"}
                 </span>
               </div>
 
@@ -742,8 +888,14 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                   </span>
                 </div>
               )}
-              <ScrollArea className="h-[250px] w-[890px] pe-3.5">
-                <Table>
+              <ScrollArea
+                className={cn(
+                  "w-full pe-3.5",
+                  isWideLayout ? "h-[360px]" : "h-[300px]",
+                )}
+              >
+                <div className="min-w-max">
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       {fields.map((field) => (
@@ -765,7 +917,7 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                       <TableRow key={i}>
                         {fields.map((field) => (
                           <TableCell key={field.key} className="text-xs">
-                            {String((row as any)[field.key] ?? "")}
+                            {String(row[field.key] ?? "")}
                           </TableCell>
                         ))}
                       </TableRow>
@@ -774,7 +926,8 @@ export function ReusableCSVUploader<TInsert extends Record<string, any>>({
                   <TableCaption>
                     Data will be saved after you confirm.
                   </TableCaption>
-                </Table>
+                  </Table>
+                </div>
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
               <div className="flex items-center justify-between pt-3">

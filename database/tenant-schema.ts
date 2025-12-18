@@ -3,16 +3,37 @@
  * Each tenant gets their own Neon project with this schema
  */
 
-import { varchar, uuid, pgTable, pgEnum, date, timestamp, text, numeric, boolean, index, integer } from 'drizzle-orm/pg-core';
+import {
+  varchar,
+  uuid,
+  pgTable,
+  pgEnum,
+  date,
+  timestamp,
+  text,
+  numeric,
+  boolean,
+  index,
+  integer,
+  jsonb,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const APPROVAL_STATUS_ENUM = pgEnum('approval_status', ['APPROVED', 'REJECTED', 'PENDING']);
 export const GENDER_ENUM = pgEnum('gender', ['MALE', 'FEMALE']);
 export const ID_TYPE_ENUM = pgEnum('id_type', ['NATIONAL_ID', 'PASSPORT', 'DRIVER_LICENSE', 'VOTER_ID']);
 export const RELATIONSHIP_ENUM = pgEnum('relationship', ['PARENT', 'SIBLING', 'SPOUSE', 'FRIEND', 'OTHER']);
-export const CONTACT_TYPE = pgEnum('contact_type', ['CLIENT', 'LAND_SELLER', 'AUDITOR', 'ICT SUPPORT', 'STATIONERY', 'SURVEYOR'])
+export const CONTACT_TYPE = pgEnum('contact_type', ['CLIENT', 'LAND_SELLER', 'AUDITOR', 'ICT SUPPORT', 'STATIONERY', 'SURVEYOR']);
 export const ACCOUNT_TYPE = pgEnum('account_type', ['Bank Account', 'Mobile Wallet']);
-export const PLOT_AVAILABILITY_ENUM = pgEnum('plot_availability', ['AVAILABLE', 'RESERVED', 'SOLD']);
+
+// NOTE: per requirements, plots are either AVAILABLE or SOLD.
+// "Held" plots are represented by plots.activeContractId.
+export const PLOT_AVAILABILITY_ENUM = pgEnum('plot_availability', ['AVAILABLE', 'SOLD']);
+
+export const CONTRACT_STATUS_ENUM = pgEnum('contract_status', ['ACTIVE', 'DELINQUENT', 'COMPLETED', 'CANCELLED']);
+export const INSTALLMENT_STATUS_ENUM = pgEnum('installment_status', ['DUE', 'PARTIAL', 'PAID']);
+export const PAYMENT_DIRECTION_ENUM = pgEnum('payment_direction', ['IN', 'OUT']);
+export const PURCHASE_PLAN_ENUM = pgEnum('purchase_plan', ['FLAT_RATE', 'DOWNPAYMENT']);
 
 export const contacts = pgTable('contacts', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -87,25 +108,172 @@ export const accounts = pgTable('accounts', {
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
-export const plots = pgTable('plots', {
+export const plots = pgTable(
+  'plots',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     plotNumber: numeric('plot_number').notNull(),
-    surveyedPlotNumber: varchar('surveyed_plot_number', { length: 50 }).notNull().unique(),
+    surveyedPlotNumber: varchar('surveyed_plot_number', { length: 50 }),
     availability: PLOT_AVAILABILITY_ENUM('availability').default('AVAILABLE').notNull(),
+
+    // Holds the currently active/delinquent contract (plot is not sellable while set)
+    // NOTE: Do not declare a Drizzle-level FK here to avoid circular table init typing.
+    // The actual FK is created in migrations.
+    activeContractId: uuid('active_contract_id'),
+
     unsurveyedSize: numeric('unsurveyed_size').notNull(),
     surveyedSize: numeric('surveyed_size'),
+
     // 🔗 Project → Plot (many plots belong to one project)
-    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'restrict' }),
-    // 🔗 Contact → Plot (many plots belong to one contact)
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'restrict' }),
+
+    // 🔗 Contact → Plot (current payer/owner; cleared on cancellation)
     contactId: uuid('contact_id').references(() => contacts.id, { onDelete: 'set null' }),
+
     isDeleted: boolean('is_deleted').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-},
-    (table) => [
-        index('plots_project_idx').on(table.projectId),
-        index('plots_contact_idx').on(table.contactId),
-    ],
+  },
+  (table) => [
+    index('plots_project_idx').on(table.projectId),
+    index('plots_contact_idx').on(table.contactId),
+    index('plots_active_contract_idx').on(table.activeContractId),
+  ],
+);
+
+export const plotSaleContracts = pgTable(
+  'plot_sale_contracts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    plotId: uuid('plot_id').notNull(),
+    clientContactId: uuid('client_contact_id')
+      .notNull()
+      .references(() => contacts.id, { onDelete: 'restrict' }),
+
+    status: CONTRACT_STATUS_ENUM('status').default('ACTIVE').notNull(),
+
+    startDate: date('start_date').notNull(),
+
+    // Number of *monthly* installments (excluding any upfront downpayment installment)
+    termMonths: integer('term_months').notNull(),
+
+    totalContractValue: numeric('total_contract_value').notNull(),
+
+    purchasePlan: PURCHASE_PLAN_ENUM('purchase_plan').default('FLAT_RATE').notNull(),
+    downpaymentPercent: numeric('downpayment_percent'),
+    downpaymentAmount: numeric('downpayment_amount').default('0').notNull(),
+    financedAmount: numeric('financed_amount').notNull(),
+
+    cancellationFeePercent: numeric('cancellation_fee_percent').notNull(),
+
+    graceDays: integer('grace_days').default(0).notNull(),
+    delinquentDaysThreshold: integer('delinquent_days_threshold').default(1).notNull(),
+    delinquentSince: timestamp('delinquent_since', { withTimezone: true }),
+
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    cancelledBy: text('cancelled_by'),
+    cancellationFeeAmount: numeric('cancellation_fee_amount'),
+    refundedAmount: numeric('refunded_amount'),
+    cancellationReason: text('cancellation_reason'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('plot_sale_contracts_plot_idx').on(table.plotId),
+    index('plot_sale_contracts_client_idx').on(table.clientContactId),
+    index('plot_sale_contracts_status_idx').on(table.status),
+  ],
+);
+
+export const contractInstallments = pgTable(
+  'contract_installments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    contractId: uuid('contract_id')
+      .notNull()
+      .references(() => plotSaleContracts.id, { onDelete: 'cascade' }),
+
+    // installment_no = 0 is reserved for an optional downpayment installment
+    installmentNo: integer('installment_no').notNull(),
+    dueDate: date('due_date').notNull(),
+    amountDue: numeric('amount_due').notNull(),
+    amountPaid: numeric('amount_paid').default('0').notNull(),
+    status: INSTALLMENT_STATUS_ENUM('status').default('DUE').notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('contract_installments_contract_idx').on(table.contractId),
+    index('contract_installments_due_idx').on(table.dueDate),
+    index('contract_installments_contract_due_idx').on(table.contractId, table.dueDate),
+  ],
+);
+
+export const contractPayments = pgTable(
+  'contract_payments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    contractId: uuid('contract_id')
+      .notNull()
+      .references(() => plotSaleContracts.id, { onDelete: 'cascade' }),
+    clientContactId: uuid('client_contact_id')
+      .notNull()
+      .references(() => contacts.id, { onDelete: 'restrict' }),
+
+    direction: PAYMENT_DIRECTION_ENUM('direction').notNull(),
+    amount: numeric('amount').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).defaultNow().notNull(),
+    method: text('method'),
+    reference: text('reference'),
+    createdBy: text('created_by'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('contract_payments_contract_idx').on(table.contractId),
+    index('contract_payments_client_idx').on(table.clientContactId),
+    index('contract_payments_received_idx').on(table.receivedAt),
+  ],
+);
+
+export const contractPaymentAllocations = pgTable(
+  'contract_payment_allocations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    paymentId: uuid('payment_id')
+      .notNull()
+      .references(() => contractPayments.id, { onDelete: 'cascade' }),
+    installmentId: uuid('installment_id')
+      .notNull()
+      .references(() => contractInstallments.id, { onDelete: 'restrict' }),
+    amount: numeric('amount').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('contract_payment_allocations_payment_idx').on(table.paymentId),
+    index('contract_payment_allocations_installment_idx').on(table.installmentId),
+  ],
+);
+
+export const contractEvents = pgTable(
+  'contract_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    contractId: uuid('contract_id')
+      .notNull()
+      .references(() => plotSaleContracts.id, { onDelete: 'cascade' }),
+    eventType: text('event_type').notNull(),
+    message: text('message'),
+    meta: jsonb('meta'),
+    createdBy: text('created_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [index('contract_events_contract_idx').on(table.contractId)],
 );
 
 // Type exports
@@ -117,26 +285,94 @@ export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Plot = typeof plots.$inferSelect;
 export type NewPlot = typeof plots.$inferInsert;
+export type PlotSaleContract = typeof plotSaleContracts.$inferSelect;
+export type NewPlotSaleContract = typeof plotSaleContracts.$inferInsert;
+export type ContractInstallment = typeof contractInstallments.$inferSelect;
+export type NewContractInstallment = typeof contractInstallments.$inferInsert;
+export type ContractPayment = typeof contractPayments.$inferSelect;
+export type NewContractPayment = typeof contractPayments.$inferInsert;
+export type ContractPaymentAllocation = typeof contractPaymentAllocations.$inferSelect;
+export type NewContractPaymentAllocation = typeof contractPaymentAllocations.$inferInsert;
+export type ContractEvent = typeof contractEvents.$inferSelect;
+export type NewContractEvent = typeof contractEvents.$inferInsert;
 export type ProjectWithPlots = Project & {
   plots: Plot[];
 };
 
 // Relations
 export const projectsRelations = relations(projects, ({ many }) => ({
-    plots: many(plots),
+  plots: many(plots),
 }));
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
-    plots: many(plots),
+  plots: many(plots),
+  plotSaleContracts: many(plotSaleContracts),
 }));
 
-export const plotsRelations = relations(plots, ({ one }) => ({
-    project: one(projects, {
-        fields: [plots.projectId],
-        references: [projects.id],
-    }),
-    contact: one(contacts, {
-        fields: [plots.contactId],
-        references: [contacts.id],
-    }),
+export const plotsRelations = relations(plots, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [plots.projectId],
+    references: [projects.id],
+  }),
+  contact: one(contacts, {
+    fields: [plots.contactId],
+    references: [contacts.id],
+  }),
+  activeContract: one(plotSaleContracts, {
+    fields: [plots.activeContractId],
+    references: [plotSaleContracts.id],
+  }),
+  contracts: many(plotSaleContracts),
+}));
+
+export const plotSaleContractsRelations = relations(plotSaleContracts, ({ one, many }) => ({
+  plot: one(plots, {
+    fields: [plotSaleContracts.plotId],
+    references: [plots.id],
+  }),
+  client: one(contacts, {
+    fields: [plotSaleContracts.clientContactId],
+    references: [contacts.id],
+  }),
+  installments: many(contractInstallments),
+  payments: many(contractPayments),
+  events: many(contractEvents),
+}));
+
+export const contractInstallmentsRelations = relations(contractInstallments, ({ one, many }) => ({
+  contract: one(plotSaleContracts, {
+    fields: [contractInstallments.contractId],
+    references: [plotSaleContracts.id],
+  }),
+  allocations: many(contractPaymentAllocations),
+}));
+
+export const contractPaymentsRelations = relations(contractPayments, ({ one, many }) => ({
+  contract: one(plotSaleContracts, {
+    fields: [contractPayments.contractId],
+    references: [plotSaleContracts.id],
+  }),
+  client: one(contacts, {
+    fields: [contractPayments.clientContactId],
+    references: [contacts.id],
+  }),
+  allocations: many(contractPaymentAllocations),
+}));
+
+export const contractPaymentAllocationsRelations = relations(contractPaymentAllocations, ({ one }) => ({
+  payment: one(contractPayments, {
+    fields: [contractPaymentAllocations.paymentId],
+    references: [contractPayments.id],
+  }),
+  installment: one(contractInstallments, {
+    fields: [contractPaymentAllocations.installmentId],
+    references: [contractInstallments.id],
+  }),
+}));
+
+export const contractEventsRelations = relations(contractEvents, ({ one }) => ({
+  contract: one(plotSaleContracts, {
+    fields: [contractEvents.contractId],
+    references: [plotSaleContracts.id],
+  }),
 }));

@@ -99,9 +99,13 @@ async function fetchOptions(input: GetSelectOptionsInput): Promise<SelectOption[
 
   const whereParts = [includeDeleted ? undefined : eq(contacts.isDeleted, false)].filter(Boolean);
 
-  if (input.contactType) whereParts.push(eq(contacts.contactType, input.contactType as any));
-  if (input.region) whereParts.push(eq(contacts.region, input.region as any));
-  if (input.district) whereParts.push(eq(contacts.district, input.district as any));
+  // Cast input.contactType to the contactType enum type used by the tenant schema
+  if (input.contactType) {
+    type ContactType = NonNullable<import("@/database/tenant-schema").Contact["contactType"]>;
+    whereParts.push(eq(contacts.contactType, input.contactType as ContactType));
+  }
+  if (input.region) whereParts.push(eq(contacts.region, input.region));
+  if (input.district) whereParts.push(eq(contacts.district, input.district));
 
   if (input.search) {
     whereParts.push(

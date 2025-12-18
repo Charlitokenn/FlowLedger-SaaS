@@ -12,6 +12,7 @@ import { useSheetControl } from "@/components/reusable components/reusable-sheet
 import { getLocationsDataset } from "@/lib/actions/catalog/location-options.actions";
 import { UpdateProject } from "@/lib/actions/tenants/projects.actions";
 import type { Project } from "@/database/tenant-schema";
+import { useRouter } from "next/navigation";
 
 const projectDetailsSchema = z.object({
   projectName: z.string().min(2, "Project name must be at least 2 characters"),
@@ -182,6 +183,7 @@ type EditProjectFormProps = {
 };
 
 export default function EditProjectForm({ project }: EditProjectFormProps) {
+  const router = useRouter();
   const { showToast } = useToast();
   const sheet = useSheetControl();
   const [, startTransition] = useTransition();
@@ -380,6 +382,8 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
       });
       throw new Error(res.error);
     }
+    //TODO - Referesh after adding projects not working
+    router.refresh();
   };
 
   return (
