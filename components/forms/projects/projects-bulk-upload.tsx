@@ -4,6 +4,7 @@ import { ReusableCSVUploader, type CsvFieldConfig } from "@/components/reusable 
 import type { NewProject } from "@/database/tenant-schema";
 import { BulkImportProjects } from "@/lib/actions/tenants/projects.actions";
 import { useSheetControl } from "@/components/reusable components/reusable-sheet";
+import { useRouter } from "next/navigation";
 
 const projectFields: CsvFieldConfig<NewProject>[] = [
   {
@@ -108,6 +109,7 @@ const projectFields: CsvFieldConfig<NewProject>[] = [
 
 export default function ProjectsBulkUpload() {
   const sheet = useSheetControl();
+  const router = useRouter();
 
   return (
     <ReusableCSVUploader<NewProject>
@@ -115,7 +117,14 @@ export default function ProjectsBulkUpload() {
       fields={projectFields}
       maxFileSizeMb={5}
       onSubmit={async (rows) => {
-        await BulkImportProjects(rows);
+        const res = await BulkImportProjects(rows);
+        if (!res.success) {
+          throw new Error(res.error);
+        }
+
+        // Refresh server components so the table reflects latest DB state.
+        router.refresh();
+
         // Close the surrounding sheet on success.
         sheet?.close();
       }}

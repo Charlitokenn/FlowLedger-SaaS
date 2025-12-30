@@ -25,18 +25,22 @@ function PopoverTrigger({ asChild, children, ...props }: PopoverTriggerProps) {
       return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
     }
 
-    const rendered = React.cloneElement(child, {
-      'data-slot': 'popover-trigger',
-    });
-
     type TriggerRender = PopoverPrimitive.Trigger.Props['render'];
+
+    const rendered = React.cloneElement(
+      child as React.ReactElement<Record<string, unknown>>,
+      {
+        ...(child.props as Record<string, unknown>),
+        ['data-slot']: 'popover-trigger',
+      },
+    );
 
     return (
       <PopoverPrimitive.Trigger
         {...props}
         // When composing with another component (like our <Button />), assume it renders a native button.
         nativeButton={props.nativeButton ?? true}
-        render={rendered as TriggerRender}
+        render={rendered as unknown as TriggerRender}
       />
     );
   }

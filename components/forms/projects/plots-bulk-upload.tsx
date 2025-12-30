@@ -3,6 +3,7 @@
 import { ReusableCSVUploader, type CsvFieldConfig } from "@/components/reusable components/reusable-csv-uploader";
 import { useSheetControl } from "@/components/reusable components/reusable-sheet";
 import { BulkUpdatePlotsForProject } from "@/lib/actions/tenants/plots.actions";
+import { useRouter } from "next/navigation";
 
 type PlotCsvUpdateRow = {
   plotNumber: number;
@@ -62,6 +63,7 @@ const plotFields: CsvFieldConfig<PlotCsvUpdateRow>[] = [
 
 export default function PlotsBulkUpload({ projectId }: { projectId: string }) {
   const sheet = useSheetControl();
+  const router = useRouter();
 
   return (
     <ReusableCSVUploader<PlotCsvUpdateRow>
@@ -73,6 +75,10 @@ export default function PlotsBulkUpload({ projectId }: { projectId: string }) {
         if (!res.success) {
           throw new Error(res.error);
         }
+
+        // Refresh server components so the plots table reflects latest DB state.
+        router.refresh();
+
         sheet?.close();
       }}
     />

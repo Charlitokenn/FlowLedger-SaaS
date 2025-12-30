@@ -1,23 +1,23 @@
 const config = {
     appDetails: {
-        name: "Flow Ledger",
-        brand: "FlowLedger",
-        supportEmail: "hello@flowledger.com",
+        name: "Land Flow",
+        brand: "LandFlow",
+        supportEmail: "hello@landflow.com",
         description: "#1 Real Estate Management Software",
         authorName: "Charles Nkonoki",
-        authorUrl: "https://flowledger.com",
+        authorUrl: "https://landflow.com",
         creatorName: "Charles Nkonoki",
         openGraph: {
-            url: "https://flowledger.com",
-            title: "Flow Ledger",
+            url: "https://landflow.com",
+            title: "Land Flow",
             description: "#1 Real Estate Management Software",
-            siteName: "Flow Ledger",
+            siteName: "Land Flow",
         },
         twitter: {
-            title: "Flow Ledger",
+            title: "Land Flow",
             description: "#1 Real Estate Management Software",
             images: [`/og.jpg`],
-            creator: "@flowledger",
+            creator: "@landflow",
         },
         icon: {
             icon: "/icon.png",

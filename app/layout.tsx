@@ -23,14 +23,14 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | FlowLedger",
-    default: "FlowLedger",
+    template: "%s | LandFlow",
+    default: "LandFlow",
   },
   description: config.appDetails.description,
   keywords: [
     "realestate system",
   ],
-  metadataBase: new URL('https://flowledger.com'),
+  metadataBase: new URL('https://landflow.com'),
   alternates: {
     canonical: '/',
     languages: {

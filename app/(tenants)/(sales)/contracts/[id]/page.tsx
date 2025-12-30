@@ -52,7 +52,7 @@ export default async function ContractDetailsPage({ params }: { params: { id: st
                 res.data.payments.map((p) => (
                   <div key={p.id} className="flex justify-between text-sm">
                     <div>
-                      {p.receivedAt} • {p.direction}
+                      {String(p.receivedAt)} • {p.direction}
                     </div>
                     <div>{String(p.amount)}</div>
                   </div>

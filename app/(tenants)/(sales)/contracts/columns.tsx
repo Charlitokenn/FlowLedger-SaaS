@@ -32,20 +32,20 @@ import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
 import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import { Project } from "@/database/tenant-schema";
+import {PlotSaleContract, Project} from "@/database/tenant-schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DeleteIcon, DownloadIcon, EditIcon, ViewIcon } from "@/components/icons";
 import EditProjectForm from "@/components/forms/projects/edit-project-form";
 import ViewProjectForm from "@/components/forms/projects/view-project-form";
 
-export const ProjectsTable = ({ data }: { data: Project[] }) => {
+export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
     const { showToast } = useToast()
 
     // Realtime-ish updates:
     // - Server emits SSE messages when `projects` or `plots` change.
     // - Client debounces `router.refresh()` so the list stays current without excessive refreshes.
     // Note: With ~200 project rows, refreshing the route is acceptable and keeps server components as the source of truth.
-    const [viewProject, setViewProject] = React.useState<Project | null>(null);
+    const [viewPlotSaleContract, setViewProject] = React.useState<PlotSaleContract | null>(null);
     const viewTriggerId = "projects-view-sheet";
 
     // Realtime-ish updates:
@@ -221,10 +221,10 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 enableHiding: false,
             },
             {
-                id: "acquisitionDate",
-                accessorKey: "acquisitionDate",
+                id: "startDate",
+                accessorKey: "startDate",
                 header: ({ column }: { column: Column<Project, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Acquisition Date" />
+                    <DataTableColumnHeader column={column} label="Contract Date" />
                 ),
                 cell: ({ cell, row }) => {
                     const project = row.original as Project;
@@ -232,7 +232,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         return <Skeleton className="h-6 w-28" />;
                     }
 
-                    const rawDate = cell.getValue<Project["acquisitionDate"]>();
+                    const rawDate = cell.getValue<PlotSaleContract["acquisitionDate"]>();
                     // rawDate can be string | null; formatDate accepts string | number | Date | undefined
                     return <div>{formatDate(rawDate ?? undefined)}</div>;
                 },
@@ -272,7 +272,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
             {
                 id: "acquisitionValue",
                 accessorKey: "acquisitionValue",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
+                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Acquisition Value" />
                 ),
                 cell: ({ cell, row }) => {
@@ -281,7 +281,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         return <Skeleton className="h-6 w-24" />;
                     }
 
-                    const rawValue = cell.getValue<Project["acquisitionValue"]>();
+                    const rawValue = cell.getValue<PlotSaleContract["acquisitionValue"]>();
 
                     // Drizzle numeric fields are usually string | null; currencyNumber expects a number
                     if (rawValue == null) {

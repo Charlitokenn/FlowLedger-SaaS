@@ -190,7 +190,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           // if (deletingRowIds.has(project.id)) {
           //   return <Skeleton className="h-6 w-28" />;
           // }
-          return <div>{value ? `Sqm ${value}` : ""}</div>;
+          return <div  className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
         },
         meta: {
           label: "Plot Size",
@@ -214,7 +214,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           // if (deletingRowIds.has(project.id)) {
           //   return <Skeleton className="h-6 w-28" />;
           // }
-          return <div>{value ? `Sqm ${value}` : ""}</div>;
+          return <div className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
         },
         meta: {
           label: "Surveyed Plot Size",
