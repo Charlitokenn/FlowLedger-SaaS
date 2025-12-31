@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 const ProjectsPage = async () => {
   const results = await GetAllProjects();
-
+console.log(results)
   return (
     <section>
       <PageHero

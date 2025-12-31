@@ -20,6 +20,9 @@ export const GetAllProjects = async () => {
                 plots: {
                     where: (pl, { eq }) => eq(pl.isDeleted, false),
                     orderBy: (pl, { asc }) => [asc(pl.plotNumber)],
+                    with: {
+                        contact: true, // 👈 fetch related contact record
+                    }
                 },
             },
         });

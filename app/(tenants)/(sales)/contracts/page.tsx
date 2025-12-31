@@ -1,7 +1,6 @@
 import PageHero from '@/components/ui/pageHero';
-import Link from 'next/link';
 import { GetContracts } from '@/lib/actions/tenants/contracts.actions';
-import ContractsTable from "./columns"
+import {ContractsTable} from "./columns"
 
 export const metadata = {
   title: {

@@ -413,7 +413,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
         [deletingRowIds, handleSingleDelete],
     );
 
-    const { table } = useDataTable({
+    const { table: contractsTable } = useDataTable({
         data: filteredData,
         columns,
         initialState: {
@@ -549,7 +549,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             />
 
             <DataTable
-                table={table}
+                table={contractsTable}
                 emptyTitle="Add Projects"
                 emptyDescription="No projects have been added so far!"
                 emptyContent={

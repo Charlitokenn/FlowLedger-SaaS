@@ -3,7 +3,7 @@
 import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
-import type { Plot, Project } from "@/database/tenant-schema"
+import type {Contact, Plot, Project} from "@/database/tenant-schema"
 import { HandCoins, HouseIcon, Landmark, LandPlot, LandPlotIcon, Text, XIcon } from "lucide-react"
 import { useDataTable } from "@/hooks/use-data-table"
 import { DataTable } from "@/components/data-table/data-table"
@@ -21,6 +21,9 @@ import { DataTableActionBar } from "@/components/data-table/data-table-action-ba
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip"
 import { Separator } from "@/components/ui/separator"
 import { DownloadIcon } from "@/components/icons"
+
+type PlotWithContact = Plot & { contact?: Contact | null }
+
 
 function PlotsTable({ plots }: { plots: Plot[] }) {
   const [status] = useQueryState("availability", parseAsArrayOf(parseAsString).withDefault([]),);
@@ -43,7 +46,6 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
       return true;
     });
   }, [clientName, status, plots]);
-
 
   const columns = React.useMemo<ColumnDef<Plot>[]>(
     () => [
@@ -110,16 +112,19 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
       {
         id: "contactId",
         accessorKey: "contactId",
-        header: ({ column }: { column: Column<Plot, unknown> }) => (
+        header: ({ column }: { column: Column<PlotWithContact, unknown> }) => (
           <DataTableColumnHeader column={column} label="Sold To" />
         ),
         cell: ({ cell, row }) => {
           const value = cell.getValue<Plot["contactId"]>()
+          const plot = row.original
+
           // const project = row.original as Plot;
           // if (deletingRowIds.has(project.id)) {
           //   return <Skeleton className="h-6 w-28" />;
           // }
-          return <div>{toProperCase(value)}</div>;
+
+          return <div>{plot.contact?.fullName ?? ""}</div>;
         },
         meta: {
           label: "Client Name",
