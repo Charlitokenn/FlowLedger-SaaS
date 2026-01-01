@@ -21,7 +21,7 @@ export const GetAllProjects = async () => {
                     where: (pl, { eq }) => eq(pl.isDeleted, false),
                     orderBy: (pl, { asc }) => [asc(pl.plotNumber)],
                     with: {
-                        contact: true, // 👈 fetch related contact record
+                        contact: true, // fetch related contact record
                     }
                 },
             },

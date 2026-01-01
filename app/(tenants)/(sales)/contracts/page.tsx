@@ -11,8 +11,7 @@ export const metadata = {
 
 export default async function ContractsPage() {
   const results = await GetContracts();
-console.log(results)
-
+    console.log(results);
     return (
         <section>
             <PageHero

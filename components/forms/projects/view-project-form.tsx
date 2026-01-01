@@ -27,25 +27,27 @@ type PlotWithContact = Plot & { contact?: Contact | null }
 
 function PlotsTable({ plots }: { plots: Plot[] }) {
   const [status] = useQueryState("availability", parseAsArrayOf(parseAsString).withDefault([]),);
-  const [clientName] = useQueryState("clientName", parseAsString.withDefault(""));
+  const [contactId] = useQueryState("contactId", parseAsString.withDefault(""));
 
   const filteredData = React.useMemo<Plot[]>(() => {
     if (!plots?.length) return [];
 
+    const clientSearch = contactId?.toLowerCase();
+
     return plots.filter((plot) => {
       // Client name filter
-      if (clientName && !plot.contactId?.toLowerCase().includes(clientName.toLowerCase())) {
+      if (
+          clientSearch &&
+          !plot?.contact?.fullName?.toLowerCase().includes(clientSearch)
+      ) {
         return false;
       }
 
       // Availability multi-select filter
-      if (status.length > 0 && !status.includes(plot.availability)) {
-        return false;
-      }
+      return !(status.length > 0 && !status.includes(plot.availability));
 
-      return true;
     });
-  }, [clientName, status, plots]);
+  }, [contactId, status, plots]);
 
   const columns = React.useMemo<ColumnDef<Plot>[]>(
     () => [
@@ -89,7 +91,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           return (
             <Badge
               className={cn(
-                "badge w-full py-0",
+                "badge w-18 py-0",
                 value === "SOLD" ? "bg-destructive" : "bg-green-600",
               )}
             >
@@ -111,12 +113,11 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
       },
       {
         id: "contactId",
-        accessorKey: "contactId",
+        accessorFn: (row) => row.contact?.fullName ?? "",
         header: ({ column }: { column: Column<PlotWithContact, unknown> }) => (
           <DataTableColumnHeader column={column} label="Sold To" />
         ),
         cell: ({ cell, row }) => {
-          const value = cell.getValue<Plot["contactId"]>()
           const plot = row.original
 
           // const project = row.original as Plot;
@@ -128,12 +129,12 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
         },
         meta: {
           label: "Client Name",
-          placeholder: "Search Client...", //TODO - Fix search is not currently working
+          placeholder: "Search Client...",
           variant: "text",
           icon: Text,
           searchable: true,
         },
-        enableColumnFilter: false,
+        enableColumnFilter: true,
         enableHiding: false,
       },
       {
@@ -156,7 +157,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           icon: Text,
           searchable: false,
         },
-        enableColumnFilter: true,
+        enableColumnFilter: false,
         enableHiding: false,
       },
       {

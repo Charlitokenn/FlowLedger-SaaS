@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
 import { formatDate } from "@/lib/format";
-import { currencyNumber, timestampToDateString } from "@/lib/utils";
+import {cn, currencyNumber, timestampToDateString, toProperCase} from "@/lib/utils";
 import { DataTableActionBar } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
 import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import {PlotSaleContract, Project} from "@/database/tenant-schema";
+import {type PlotSaleContract, Project} from "@/database/tenant-schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DeleteIcon, DownloadIcon, EditIcon, ViewIcon } from "@/components/icons";
 import EditProjectForm from "@/components/forms/projects/edit-project-form";
@@ -45,30 +45,31 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
     // - Server emits SSE messages when `projects` or `plots` change.
     // - Client debounces `router.refresh()` so the list stays current without excessive refreshes.
     // Note: With ~200 project rows, refreshing the route is acceptable and keeps server components as the source of truth.
-    const [viewPlotSaleContract, setViewProject] = React.useState<PlotSaleContract | null>(null);
+    const [viewProject, setViewProject] = React.useState<PlotSaleContract | null>(null);
     const viewTriggerId = "projects-view-sheet";
 
     // Realtime-ish updates:
     // - Always subscribe to `projects` changes.
     // - Subscribe to `plots` only when the view sheet is open for a specific project,
     //   using the SSE `projectId` filter to avoid unnecessary load.
-    const liveSources = React.useMemo(
-      () => [
-        { url: "/api/live/projects" },
-        {
-          url: viewProject?.id
-            ? `/api/live/plots?projectId=${encodeURIComponent(viewProject.id)}`
-            : "/api/live/plots",
-          enabled: !!viewProject?.id,
-        },
-      ],
-      [viewProject?.id],
-    );
+    // const liveSources = React.useMemo(
+    //   () => [
+    //     { url: "/api/live/projects" },
+    //     {
+    //       url: viewProject?.id
+    //         ? `/api/live/plots?projectId=${encodeURIComponent(viewProject.id)}`
+    //         : "/api/live/plots",
+    //       enabled: !!viewProject?.id,
+    //     },
+    //   ],
+    //   [viewProject?.id],
+    // );
 
-    useLiveRefresh(liveSources, { debounceMs: 1200, pauseWhenHidden: true });
-    const [projectName] = useQueryState("projectName", parseAsString.withDefault(""));
-    const [acquisitionDate] = useQueryState("acquisitionDate", parseAsArrayOf(parseAsString).withDefault([]));
-    const [acquisitionValue] = useQueryState("acquisitionValue", parseAsArrayOf(parseAsString).withDefault([]));
+    // useLiveRefresh(liveSources, { debounceMs: 1200, pauseWhenHidden: true });
+    const [clientContactId] = useQueryState("clientContactId", parseAsString.withDefault(""));
+    const [contractDate] = useQueryState("startDate", parseAsArrayOf(parseAsString).withDefault([]));
+    const [status] = useQueryState("status", parseAsArrayOf(parseAsString).withDefault([]),);
+    const [contractValue] = useQueryState("totalContractValue", parseAsArrayOf(parseAsString).withDefault([]));
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [deletingRowIds, setDeletingRowIds] = React.useState<Set<string>>(new Set());
     const [hiddenProjectIds, setHiddenProjectIds] = React.useState<Set<string>>(new Set());
@@ -76,44 +77,50 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
 
   // If the page data refreshes (router.refresh / revalidatePath), keep the currently open
   // view sheet in sync with the latest version of the project from the new `data` prop.
-  React.useEffect(() => {
-    if (!viewProject) return;
-    const next = data.find((p) => p.id === viewProject.id) ?? null;
-    if (next && next !== viewProject) {
-      setViewProject(next);
-    }
-  }, [data, viewProject]);
+  // React.useEffect(() => {
+  //   if (!viewProject) return;
+  //   const next = data.find((p) => p.id === viewProject.id) ?? null;
+  //   if (next && next !== viewProject) {
+  //     setViewProject(next);
+  //   }
+  // }, [data, viewProject]);
 
-    const filteredData = React.useMemo<Project[]>(() => {
+    const filteredData = React.useMemo<PlotSaleContract[]>(() => {
         if (!data) return [];
 
         // Pre-convert all acquisition date timestamps once
-        const dateStrings = acquisitionDate.map(timestampToDateString);
+        const dateStrings = contractDate.map(timestampToDateString);
         const hasDateFilter = dateStrings.length > 0;
         const isDateRange = dateStrings.length === 2;
 
         // Pre-process acquisition value filter (convert query strings to numbers)
-        const hasValueFilter = acquisitionValue.length > 0;
-        const isValueRange = acquisitionValue.length === 2;
-        const valueNumbers = acquisitionValue.map(v => parseFloat(v));
+        const hasValueFilter = contractValue.length > 0;
+        const isValueRange = contractValue.length === 2;
+        const valueNumbers = contractValue.map(v => parseFloat(v));
 
         // Sort for range comparisons if needed
         if (isDateRange) dateStrings.sort();
         if (isValueRange) valueNumbers.sort((a, b) => a - b);
 
-        return data.filter((project: Project) => {
+        const clientSearch = clientContactId?.toLowerCase();
+
+        return data.filter((contract: PlotSaleContract) => {
             // Optimistically hide rows that have been deleted on the client
-            if (hiddenProjectIds.has(project.id)) {
+            if (hiddenProjectIds.has(contract.id)) {
                 return false;
             }
-            // Project name filter
-            if (projectName && !project?.projectName.toLowerCase().includes(projectName.toLowerCase())) {
+
+            // Client name filter
+            if (
+                clientSearch &&
+                !contract?.client?.fullName?.toLowerCase().includes(clientSearch)
+            ) {
                 return false;
             }
 
             // Date filter
             if (hasDateFilter) {
-                const projectDate = project?.acquisitionDate;
+                const projectDate = contract?.startDate;
                 if (!projectDate) return false;
 
                 if (isDateRange) {
@@ -125,9 +132,12 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 }
             }
 
+            // Status filter
+            if (status.length > 0 && !status.includes(contract.status)) return false;
+
             // Acquisition value filter
             if (hasValueFilter) {
-                const rawProjectValue = project?.acquisitionValue;
+                const rawProjectValue = contract?.totalContractValue;
                 if (rawProjectValue == null) return false;
 
                 // Drizzle numeric fields are typically strings; convert to number for comparison
@@ -148,7 +158,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
 
             return true;
         });
-    }, [projectName, acquisitionDate, acquisitionValue, data, hiddenProjectIds]);
+    }, [clientContactId, status, contractDate, contractValue, data, hiddenProjectIds]);
 
     const handleSingleDelete = React.useCallback(
         async (id: string) => {
@@ -193,7 +203,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
         [showToast],
     );
 
-    const columns = React.useMemo<ColumnDef<Project>[]>(
+    const columns = React.useMemo<ColumnDef<PlotSaleContract>[]>(
         () => [
             {
                 id: "select",
@@ -221,9 +231,47 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 enableHiding: false,
             },
             {
+                id: "status",
+                accessorKey: "status",
+                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Status" />
+                ),
+                cell: ({ cell, row }) => {
+                    const value = cell.getValue<PlotSaleContract["status"]>()
+                    // const project = row.original as Plot;
+                    // if (deletingRowIds.has(project.id)) {
+                    //   return <Skeleton className="h-6 w-28" />;
+                    // }
+                    return (
+                        <Badge
+                            className={cn(
+                                "badge w-20 py-0",
+                                value === "CANCELLED" ? "bg-destructive"
+                                    : value === "ACTIVE" ? "bg-green-600" : ""
+                            )}
+                        >
+                            {toProperCase(value)}
+                        </Badge>
+                    );
+                },
+                meta: {
+                    label: "Status",
+                    placeholder: "Filter Status...",
+                    variant: "multiSelect",
+                    options: [
+                        { label: "Active", value: "ACTIVE" },
+                        { label: "Delinquent", value: "DELINQUENT" },
+                        { label: "Completed", value: "COMPLETED" },
+                        { label: "Cancelled", value: "CANCELLED" },
+                    ],
+                },
+                enableColumnFilter: true,
+                enableHiding: false,
+            },
+            {
                 id: "startDate",
                 accessorKey: "startDate",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
+                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Contract Date" />
                 ),
                 cell: ({ cell, row }) => {
@@ -232,7 +280,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                         return <Skeleton className="h-6 w-28" />;
                     }
 
-                    const rawDate = cell.getValue<PlotSaleContract["acquisitionDate"]>();
+                    const rawDate = cell.getValue<PlotSaleContract["startDate"]>();
                     // rawDate can be string | null; formatDate accepts string | number | Date | undefined
                     return <div>{formatDate(rawDate ?? undefined)}</div>;
                 },
@@ -247,21 +295,23 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 enableHiding: false,
             },
             {
-                id: "projectName",
-                accessorKey: "projectName",
-                header: ({ column }: { column: Column<Project, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Project Name" />
+                id: "clientContactId",
+                // accessorKey: "clientContactId",
+                accessorFn: (row) => row.client?.fullName ?? "",
+                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Client Name" />
                 ),
                 cell: ({ cell, row }) => {
-                    const project = row.original as Project;
-                    if (deletingRowIds.has(project.id)) {
-                        return <Skeleton className="h-6 w-28" />;
-                    }
-                    return <div>{cell.getValue<Project["projectName"]>()}</div>;
+                    const contract = row.original;
+
+                    // if (deletingRowIds.has(project.id)) {
+                    //     return <Skeleton className="h-6 w-28" />;
+                    // }
+                    return <div>{contract.client?.fullName}</div>;
                 },
                 meta: {
-                    label: "Project Name",
-                    placeholder: "Search Project...",
+                    label: "Client Name",
+                    placeholder: "Search Client...",
                     variant: "text",
                     icon: Text,
                     searchable: true,
@@ -270,10 +320,33 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 enableHiding: false,
             },
             {
-                id: "acquisitionValue",
-                accessorKey: "acquisitionValue",
+                id: "plotId",
+                accessorKey: "plotId",
                 header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Acquisition Value" />
+                    <DataTableColumnHeader column={column} label="Plot No" />
+                ),
+                cell: ({ cell, row }) => {
+                    const project = row.original
+                    if (deletingRowIds.has(project.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
+                    return <div>Plot No. {project.plot.plotNumber}</div>;
+                },
+                meta: {
+                    label: "Plot ID",
+                    placeholder: "Search Plot...",
+                    variant: "text",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: false,
+                enableHiding: false,
+            },
+            {
+                id: "totalContractValue",
+                accessorKey: "totalContractValue",
+                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Contract Value" />
                 ),
                 cell: ({ cell, row }) => {
                     const project = row.original as Project;
@@ -281,7 +354,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                         return <Skeleton className="h-6 w-24" />;
                     }
 
-                    const rawValue = cell.getValue<PlotSaleContract["acquisitionValue"]>();
+                    const rawValue = cell.getValue<PlotSaleContract["totalContractValue"]>();
 
                     // Drizzle numeric fields are usually string | null; currencyNumber expects a number
                     if (rawValue == null) {
@@ -297,8 +370,8 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                     );
                 },
                 meta: {
-                    label: "Acquisition Value",
-                    placeholder: "Acquisition Value...",
+                    label: "Contract Value",
+                    placeholder: "Contract Value...",
                     variant: "range",
                     icon: Text,
                     searchable: true,
@@ -479,7 +552,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
         document.body.removeChild(link);
 
         URL.revokeObjectURL(url);
-    }, [table]);
+    }, [contractsTable]);
 
     const handleDelete = React.useCallback(async (ids?: string[]) => {
         const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -530,9 +603,9 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 return next;
             });
         }
-    }, [table, showToast]);
+    }, [contractsTable, showToast]);
 
-    const selectedRowsCount = table.getFilteredSelectedRowModel().rows.length
+    const selectedRowsCount = contractsTable.getFilteredSelectedRowModel().rows.length
 
     return (
         <div className="data-table-container">
@@ -566,7 +639,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 }
                 emptyMedia={<Archive />}
                 actionBar={
-                    <DataTableActionBar table={table} className="flex">
+                    <DataTableActionBar table={contractsTable} className="flex">
                         <Badge variant="outline" className="gap-0 rounded-md px-2 py-1">
                             {selectedRowsCount} Selected
                             <button
@@ -574,7 +647,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                                 aria-label="Clear selection"
                             >
                                 <ReusableTooltip
-                                    trigger={<XIcon size={14} aria-hidden="true" onClick={() => table.resetRowSelection()} />}
+                                    trigger={<XIcon size={14} aria-hidden="true" onClick={() => contractsTable.resetRowSelection()} />}
                                     tooltip="Clear selection"
                                 />
                             </button>                        </Badge>
@@ -613,7 +686,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                     </DataTableActionBar>
                 }
             >
-                <DataTableToolbar table={table} />
+                <DataTableToolbar table={contractsTable} />
             </DataTable>
         </div>
     );
