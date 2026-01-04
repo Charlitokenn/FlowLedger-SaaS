@@ -1,17 +1,19 @@
 import PageHero from '@/components/ui/pageHero';
 import { GetContracts } from '@/lib/actions/tenants/contracts.actions';
-import {ContractsTable} from "./columns"
+import { ContractsTable } from "./columns";
+import { AddContractForm } from "@/components/forms/contracts/add-contract-form";
+import appConfig from "@/lib/app-config";
 
 export const metadata = {
   title: {
-    template: '%s | LandFlow',
+    template: `%s | ${appConfig.appDetails.brand}`,
     default: 'Contracts',
   },
 };
 
 export default async function ContractsPage() {
   const results = await GetContracts();
-    console.log(results);
+
     return (
         <section>
             <PageHero
@@ -21,9 +23,7 @@ export default async function ContractsPage() {
                 showButton
                 buttonText="New Contract"
                 sheetTitle="New Contract"
-                // sheetContent={<AddProjectsForm />}
-                // bulkUploader={<ProjectsBulkUpload />}
-                showBulkUploader
+                sheetContent={<AddContractForm />}
                 hideBulkUploaderHeader={true}
                 hideBulkUploaderFooter={true}
                 bulkUploaderClass="max-w-full"

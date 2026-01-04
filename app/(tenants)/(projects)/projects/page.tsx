@@ -4,10 +4,11 @@ import { Metadata } from "next";
 import { ProjectsTable } from "./columns"
 import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
 import ProjectsBulkUpload from "@/components/forms/projects/projects-bulk-upload";
+import appConfig from "@/lib/app-config";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | FlowLedger",
+    template: `%s | ${appConfig.appDetails.brand}`,
     default: "Projects",
   },
 };

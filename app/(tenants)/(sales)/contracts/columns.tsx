@@ -1,18 +1,20 @@
 "use client";
 
+import * as React from "react";
 import { type Column, type ColumnDef } from "@tanstack/react-table";
 import {
     Archive,
     Loader2,
     MoreHorizontal,
     Plus,
+    Search,
     SquarePen,
     Text,
     Trash2Icon,
     XIcon,
 } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
-import * as React from "react";
+
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
@@ -20,180 +22,154 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
 import { formatDate } from "@/lib/format";
-import {cn, currencyNumber, timestampToDateString, toProperCase} from "@/lib/utils";
+import { cn, currencyNumber, timestampToDateString, toProperCase } from "@/lib/utils";
 import { DataTableActionBar } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/reusable components/toast-context";
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
-import { SoftDeleteProjects } from "@/lib/actions/tenants/projects.actions";
 import ReusableSheet from "@/components/reusable components/reusable-sheet";
 import ReusablePopover from "@/components/reusable components/reusable-popover";
-import { AddProjectsForm } from "@/components/forms/projects/add-projects-form";
-import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import {type PlotSaleContract, Project} from "@/database/tenant-schema";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DeleteIcon, DownloadIcon, EditIcon, ViewIcon } from "@/components/icons";
-import EditProjectForm from "@/components/forms/projects/edit-project-form";
-import ViewProjectForm from "@/components/forms/projects/view-project-form";
 
-export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
-    const { showToast } = useToast()
+import {ContractListRow, GetContracts} from "@/lib/actions/tenants/contracts.actions";
+import { CancelContract } from "@/lib/actions/tenants/contracts.actions";
+import { AddContractForm } from "@/components/forms/contracts/add-contract-form";
+import EditContractForm from "@/components/forms/contracts/edit-contract-form";
+import ViewContractForm from "@/components/forms/contracts/view-contract-form";
 
-    // Realtime-ish updates:
-    // - Server emits SSE messages when `projects` or `plots` change.
-    // - Client debounces `router.refresh()` so the list stays current without excessive refreshes.
-    // Note: With ~200 project rows, refreshing the route is acceptable and keeps server components as the source of truth.
-    const [viewProject, setViewProject] = React.useState<PlotSaleContract | null>(null);
-    const viewTriggerId = "projects-view-sheet";
+export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
+    const { showToast } = useToast();
 
-    // Realtime-ish updates:
-    // - Always subscribe to `projects` changes.
-    // - Subscribe to `plots` only when the view sheet is open for a specific project,
-    //   using the SSE `projectId` filter to avoid unnecessary load.
-    // const liveSources = React.useMemo(
-    //   () => [
-    //     { url: "/api/live/projects" },
-    //     {
-    //       url: viewProject?.id
-    //         ? `/api/live/plots?projectId=${encodeURIComponent(viewProject.id)}`
-    //         : "/api/live/plots",
-    //       enabled: !!viewProject?.id,
-    //     },
-    //   ],
-    //   [viewProject?.id],
-    // );
+    const [viewContract, setViewContract] = React.useState<ContractListRow | null>(null);
+    const viewTriggerId = "contracts-view-sheet";
 
-    // useLiveRefresh(liveSources, { debounceMs: 1200, pauseWhenHidden: true });
-    const [clientContactId] = useQueryState("clientContactId", parseAsString.withDefault(""));
-    const [contractDate] = useQueryState("startDate", parseAsArrayOf(parseAsString).withDefault([]));
-    const [status] = useQueryState("status", parseAsArrayOf(parseAsString).withDefault([]),);
-    const [contractValue] = useQueryState("totalContractValue", parseAsArrayOf(parseAsString).withDefault([]));
-    const [isDeleting, setIsDeleting] = React.useState(false);
-    const [deletingRowIds, setDeletingRowIds] = React.useState<Set<string>>(new Set());
-    const [hiddenProjectIds, setHiddenProjectIds] = React.useState<Set<string>>(new Set());
+    // Filters from URL
+    const [clientName] = useQueryState(
+        "clientContactId",
+        parseAsString.withDefault(""),
+    );
+    const [contractDate] = useQueryState(
+        "startDate",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
+    const [status] = useQueryState(
+        "status",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
+    const [contractValue] = useQueryState(
+        "totalContractValue",
+        parseAsArrayOf(parseAsString).withDefault([]),
+    );
 
+    const [isCancelling, setIsCancelling] = React.useState(false);
+    const [cancellingIds, setCancellingIds] = React.useState<Set<string>>(new Set());
 
-  // If the page data refreshes (router.refresh / revalidatePath), keep the currently open
-  // view sheet in sync with the latest version of the project from the new `data` prop.
-  // React.useEffect(() => {
-  //   if (!viewProject) return;
-  //   const next = data.find((p) => p.id === viewProject.id) ?? null;
-  //   if (next && next !== viewProject) {
-  //     setViewProject(next);
-  //   }
-  // }, [data, viewProject]);
-
-    const filteredData = React.useMemo<PlotSaleContract[]>(() => {
+    const filteredData = React.useMemo<ContractListRow[]>(() => {
         if (!data) return [];
 
-        // Pre-convert all acquisition date timestamps once
+        // Date filter
         const dateStrings = contractDate.map(timestampToDateString);
         const hasDateFilter = dateStrings.length > 0;
         const isDateRange = dateStrings.length === 2;
+        if (isDateRange) dateStrings.sort();
 
-        // Pre-process acquisition value filter (convert query strings to numbers)
+        // Value filter
         const hasValueFilter = contractValue.length > 0;
         const isValueRange = contractValue.length === 2;
-        const valueNumbers = contractValue.map(v => parseFloat(v));
-
-        // Sort for range comparisons if needed
-        if (isDateRange) dateStrings.sort();
+        const valueNumbers = contractValue.map((v) => parseFloat(v));
         if (isValueRange) valueNumbers.sort((a, b) => a - b);
 
-        const clientSearch = clientContactId?.toLowerCase();
+        const clientSearch = clientName?.toLowerCase() ?? "";
 
-        return data.filter((contract: PlotSaleContract) => {
-            // Optimistically hide rows that have been deleted on the client
-            if (hiddenProjectIds.has(contract.id)) {
-                return false;
-            }
-
+        return data.filter((contract) => {
             // Client name filter
             if (
                 clientSearch &&
-                !contract?.client?.fullName?.toLowerCase().includes(clientSearch)
+                !contract.client?.fullName?.toLowerCase().includes(clientSearch)
             ) {
                 return false;
             }
 
-            // Date filter
+            // Status multi-select filter
+            if (status.length > 0 && !status.includes(contract.status)) {
+                return false;
+            }
+
+            // Date filter (startDate is date-only string)
             if (hasDateFilter) {
-                const projectDate = contract?.startDate;
-                if (!projectDate) return false;
+                const start = contract.startDate;
+                if (!start) return false;
 
                 if (isDateRange) {
-                    if (!(projectDate >= dateStrings[0] && projectDate <= dateStrings[1])) {
+                    if (!(start >= dateStrings[0] && start <= dateStrings[1])) {
                         return false;
                     }
-                } else if (!dateStrings.includes(projectDate)) {
+                } else if (!dateStrings.includes(start)) {
                     return false;
                 }
             }
 
-            // Status filter
-            if (status.length > 0 && !status.includes(contract.status)) return false;
-
-            // Acquisition value filter
+            // Contract value filter
             if (hasValueFilter) {
-                const rawProjectValue = contract?.totalContractValue;
-                if (rawProjectValue == null) return false;
+                const raw = contract.totalContractValue;
+                if (raw == null) return false;
 
-                // Drizzle numeric fields are typically strings; convert to number for comparison
-                const projectValue = Number(rawProjectValue);
-
-                if (Number.isNaN(projectValue)) {
-                    return false;
-                }
+                const value = Number(raw);
+                if (Number.isNaN(value)) return false;
 
                 if (isValueRange) {
-                    if (!(projectValue >= valueNumbers[0] && projectValue <= valueNumbers[1])) {
+                    if (!(value >= valueNumbers[0] && value <= valueNumbers[1])) {
                         return false;
                     }
-                } else if (!valueNumbers.includes(projectValue)) {
+                } else if (!valueNumbers.includes(value)) {
                     return false;
                 }
             }
 
             return true;
         });
-    }, [clientContactId, status, contractDate, contractValue, data, hiddenProjectIds]);
+    }, [clientName, status, contractDate, contractValue, data]);
 
-    const handleSingleDelete = React.useCallback(
+    // Single cancel
+    const handleSingleCancel = React.useCallback(
         async (id: string) => {
-            // mark this row as pending delete so we can show a skeleton
-            setDeletingRowIds(prev => {
-                const next = new Set(prev);
-                next.add(id);
-                return next;
-            });
+            setCancellingIds((prev) => new Set(prev).add(id));
+
             try {
-                await SoftDeleteProjects([id]);
-                // Optimistically hide this row from the table
-                setHiddenProjectIds(prev => {
-                    const next = new Set(prev);
-                    next.add(id);
-                    return next;
+                const res = await CancelContract({
+                    contractId: id,
+                    reason: "Cancelled from contracts table",
                 });
+
+                if (!res.success) {
+                    throw new Error(res.error);
+                }
+
                 showToast({
-                    title: "Delete Successful",
-                    description: "1 project has been deleted",
+                    title: "Contract cancelled",
+                    description: "1 contract has been cancelled",
                     variant: "success",
                     showAction: false,
                 });
             } catch (error) {
-                console.error("Error deleting project:", error);
+                console.error("Error cancelling contract:", error);
                 showToast({
-                    title: "Error Deleting Project",
+                    title: "Error Cancelling Contract",
                     description:
                         error instanceof Error ? error.message : "An unexpected error occurred",
                     variant: "error",
                     showAction: false,
                 });
             } finally {
-                // clear pending delete state for this row (it may already be hidden)
-                setDeletingRowIds(prev => {
+                setCancellingIds((prev) => {
                     const next = new Set(prev);
                     next.delete(id);
                     return next;
@@ -203,7 +179,7 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
         [showToast],
     );
 
-    const columns = React.useMemo<ColumnDef<PlotSaleContract>[]>(
+    const columns = React.useMemo<ColumnDef<ContractListRow>[]>(
         () => [
             {
                 id: "select",
@@ -233,21 +209,21 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             {
                 id: "status",
                 accessorKey: "status",
-                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Status" />
                 ),
-                cell: ({ cell, row }) => {
-                    const value = cell.getValue<PlotSaleContract["status"]>()
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
+                cell: ({ cell }) => {
+                    const value = cell.getValue<ContractListRow["status"]>();
+
                     return (
                         <Badge
                             className={cn(
                                 "badge w-20 py-0",
-                                value === "CANCELLED" ? "bg-destructive"
-                                    : value === "ACTIVE" ? "bg-green-600" : ""
+                                value === "CANCELLED"
+                                    ? "bg-destructive"
+                                    : value === "ACTIVE"
+                                        ? "bg-green-600"
+                                        : "",
                             )}
                         >
                             {toProperCase(value)}
@@ -271,18 +247,17 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             {
                 id: "startDate",
                 accessorKey: "startDate",
-                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Contract Date" />
                 ),
                 cell: ({ cell, row }) => {
-                    const project = row.original as Project;
-                    if (deletingRowIds.has(project.id)) {
+                    const contract = row.original;
+                    if (cancellingIds.has(contract.id)) {
                         return <Skeleton className="h-6 w-28" />;
                     }
 
-                    const rawDate = cell.getValue<PlotSaleContract["startDate"]>();
-                    // rawDate can be string | null; formatDate accepts string | number | Date | undefined
-                    return <div>{formatDate(rawDate ?? undefined)}</div>;
+                    const raw = cell.getValue<ContractListRow["startDate"]>();
+                    return <div>{formatDate(raw ?? undefined)}</div>;
                 },
                 meta: {
                     label: "Date Filter",
@@ -296,18 +271,13 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             },
             {
                 id: "clientContactId",
-                // accessorKey: "clientContactId",
                 accessorFn: (row) => row.client?.fullName ?? "",
-                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Client Name" />
                 ),
-                cell: ({ cell, row }) => {
+                cell: ({ row }) => {
                     const contract = row.original;
-
-                    // if (deletingRowIds.has(project.id)) {
-                    //     return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return <div>{contract.client?.fullName}</div>;
+                    return <div>{contract.client?.fullName ?? ""}</div>;
                 },
                 meta: {
                     label: "Client Name",
@@ -322,15 +292,15 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             {
                 id: "plotId",
                 accessorKey: "plotId",
-                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Plot No" />
                 ),
-                cell: ({ cell, row }) => {
-                    const project = row.original
-                    if (deletingRowIds.has(project.id)) {
+                cell: ({ row }) => {
+                    const contract = row.original;
+                    if (cancellingIds.has(contract.id)) {
                         return <Skeleton className="h-6 w-28" />;
                     }
-                    return <div>Plot No. {project.plot.plotNumber}</div>;
+                    return <div>Plot No. {contract.plot?.plotNumber ?? "-"}</div>;
                 },
                 meta: {
                     label: "Plot ID",
@@ -345,24 +315,21 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             {
                 id: "totalContractValue",
                 accessorKey: "totalContractValue",
-                header: ({ column }: { column: Column<PlotSaleContract, unknown> }) => (
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Contract Value" />
                 ),
                 cell: ({ cell, row }) => {
-                    const project = row.original as Project;
-                    if (deletingRowIds.has(project.id)) {
+                    const contract = row.original;
+                    if (cancellingIds.has(contract.id)) {
                         return <Skeleton className="h-6 w-24" />;
                     }
 
-                    const rawValue = cell.getValue<PlotSaleContract["totalContractValue"]>();
-
-                    // Drizzle numeric fields are usually string | null; currencyNumber expects a number
-                    if (rawValue == null) {
+                    const raw = cell.getValue<ContractListRow["totalContractValue"]>();
+                    if (raw == null) {
                         return <div className="flex items-center gap-1">-</div>;
                     }
 
-                    const numericValue = Number(rawValue);
-
+                    const numericValue = Number(raw);
                     return (
                         <div className="flex items-center gap-1">
                             {currencyNumber(numericValue)}
@@ -382,9 +349,9 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             {
                 id: "actions",
                 cell: function Cell({ row }) {
-                    const project = row.original as Project;
-                    const editTriggerId = `project-edit-${project.id}`;
-                    const deleteTriggerId = `project-delete-${project.id}`;
+                    const contract = row.original as ContractListRow;
+                    const editTriggerId = `contract-edit-${contract.id}`;
+                    const deleteTriggerId = `contract-delete-${contract.id}`;
 
                     return (
                         <div className="flex flex-row">
@@ -392,30 +359,30 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                             <ReusableSheet
                                 triggerId={editTriggerId}
                                 trigger={<span className="hidden" />}
-                                title="Editing Project"
+                                title="Editing Contract"
                                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                                formContent={<EditProjectForm project={project} />}
-                                hideFooter={true}
-                                hideHeader={true}
+                                formContent={<EditContractForm contract={contract} />}
+                                hideFooter
+                                hideHeader
                                 popupClass="max-w-full"
                             />
                             <ReusablePopover
                                 triggerId={deleteTriggerId}
                                 trigger={<span className="hidden" />}
-                                title="Confirm Delete?"
+                                title="Confirm Cancel?"
                                 content={
                                     <Button
-                                        size='sm'
+                                        size="sm"
                                         className="p-1 btn-primary w-full"
-                                        onClick={() => handleSingleDelete(project.id)}
-                                        disabled={deletingRowIds.has(project.id)}
+                                        onClick={() => handleSingleCancel(contract.id)}
+                                        disabled={cancellingIds.has(contract.id)}
                                     >
-                                        {deletingRowIds.has(project.id) ? (
+                                        {cancellingIds.has(contract.id) ? (
                                             <div className="flex gap-2 items-center">
-                                                Deleting <Loader2 className="animate-spin" />
+                                                Cancelling <Loader2 className="animate-spin" />
                                             </div>
                                         ) : (
-                                            "Yes, Delete"
+                                            "Yes, Cancel"
                                         )}
                                     </Button>
                                 }
@@ -445,15 +412,16 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                                     <DropdownMenuItem
                                         className="cursor-pointer"
                                         onSelect={() => {
-                                            // Set the selected project, then open the shared view sheet.
-                                            setViewProject(project);
+                                            // Set the selected contract, then open the shared view sheet.
+                                            setViewContract(contract);
                                             setTimeout(() => {
-                                                const btn = document.querySelector<HTMLButtonElement>(
-                                                    `[data-sheet-trigger-id='${viewTriggerId}']`,
-                                                );
+                                                const btn =
+                                                    document.querySelector<HTMLButtonElement>(
+                                                        `[data-sheet-trigger-id='${viewTriggerId}']`,
+                                                    );
 
-                                                // If it's already open, don't toggle it closed.
-                                                const isOpen = btn?.getAttribute("aria-expanded") === "true";
+                                                const isOpen =
+                                                    btn?.getAttribute("aria-expanded") === "true";
                                                 if (!isOpen) {
                                                     btn?.click();
                                                 }
@@ -466,14 +434,15 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                                     <DropdownMenuItem
                                         className="cursor-pointer text-destructive hover:text-destructive!"
                                         onSelect={() => {
-                                            const btn = document.querySelector<HTMLDivElement>(
-                                                `[data-popover-trigger-id='${deleteTriggerId}']`,
-                                            );
+                                            const btn =
+                                                document.querySelector<HTMLDivElement>(
+                                                    `[data-popover-trigger-id='${deleteTriggerId}']`,
+                                                );
                                             btn?.click();
                                         }}
                                     >
                                         <DeleteIcon className="size-4.5 text-destructive" />
-                                        Delete
+                                        Cancel
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -483,14 +452,14 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                 size: 32,
             },
         ],
-        [deletingRowIds, handleSingleDelete],
+        [cancellingIds, handleSingleCancel],
     );
 
     const { table: contractsTable } = useDataTable({
         data: filteredData,
         columns,
         initialState: {
-            sorting: [{ id: "acquisitionDate", desc: false }],
+            sorting: [{ id: "startDate", desc: false }],
             columnPinning: { right: ["actions"] },
             pagination: {
                 pageSize: 6,
@@ -501,50 +470,76 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
     });
 
     const handleDownloadCSV = React.useCallback(() => {
-        const selectedRows = table.getFilteredSelectedRowModel().rows;
-
+        const selectedRows = contractsTable.getFilteredSelectedRowModel().rows;
         if (selectedRows.length === 0) return;
 
-        const projects = selectedRows.map(row => row.original);
+        const contracts = selectedRows.map((row) => row.original as ContractListRow);
+        if (contracts.length === 0) return;
 
-        // Get all keys from the first project and filter out 'isDeleted'
-        const headers = Object.keys(projects[0]).filter(key => key !== 'isDeleted');
+        const headers = [
+            "id",
+            "status",
+            "startDate",
+            "totalContractValue",
+            "clientName",
+            "plotNumber",
+        ];
 
-        // Convert rows to CSV format
-        const csvRows = projects.map(project => {
-            return headers.map(header => {
-                const value = project[header as keyof Project];
+        const csvRows = contracts.map((contract) => {
+            const row: (string | number)[] = [];
+            const clientName = contract.client?.fullName ?? "";
+            const plotNumber = contract.plot?.plotNumber ?? "";
 
-                // Handle different data types
+            headers.forEach((h) => {
+                let value: unknown;
+                switch (h) {
+                    case "id":
+                        value = contract.id;
+                        break;
+                    case "status":
+                        value = contract.status;
+                        break;
+                    case "startDate":
+                        value = contract.startDate ? formatDate(contract.startDate) : "";
+                        break;
+                    case "totalContractValue":
+                        value = contract.totalContractValue ?? "";
+                        break;
+                    case "clientName":
+                        value = clientName;
+                        break;
+                    case "plotNumber":
+                        value = plotNumber;
+                        break;
+                    default:
+                        value = "";
+                }
+
                 if (value === null || value === undefined) {
-                    return '';
+                    row.push("");
+                } else if (typeof value === "string") {
+                    row.push(`"${value.replace(/"/g, '""')}"`);
+                } else {
+                    row.push(value as number);
                 }
+            });
 
-                // Format dates if the field contains 'date' or 'Date'
-                if (header.toLowerCase().includes('date') && typeof value === 'string') {
-                    return `"${formatDate(value)}"`;
-                }
-
-                // Escape and quote string values
-                if (typeof value === 'string') {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-
-                // Return numbers and booleans as-is
-                return value;
-            }).join(",");
+            return row.join(",");
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(","), ...csvRows].join("\n");
 
-        // Create blob and download
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
 
         link.setAttribute("href", url);
-        link.setAttribute("download", `projects_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute(
+            "download",
+            `contracts_export_${new Date().toISOString().split("T")[0]}.csv`,
+        );
         link.style.visibility = "hidden";
 
         document.body.appendChild(link);
@@ -554,58 +549,67 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
         URL.revokeObjectURL(url);
     }, [contractsTable]);
 
-    const handleDelete = React.useCallback(async (ids?: string[]) => {
-        const selectedRows = table.getFilteredSelectedRowModel().rows;
-        const selectedIds = ids && ids.length > 0 ? ids : selectedRows.map(row => row.original.id);
+    const handleBulkCancel = React.useCallback(
+        async (ids?: string[]) => {
+            const selectedRows = contractsTable.getFilteredSelectedRowModel().rows;
+            const selectedIds =
+                ids && ids.length > 0
+                    ? ids
+                    : selectedRows.map((row) => row.original.id);
 
-        if (selectedIds.length === 0) return;
+            if (selectedIds.length === 0) return;
 
-        // mark all selected rows as pending delete so we can show skeletons
-        setDeletingRowIds(prev => {
-            const next = new Set(prev);
-            selectedIds.forEach(id => next.add(id));
-            return next;
-        });
-
-        setIsDeleting(true);
-
-        try {
-            await SoftDeleteProjects(selectedIds);
-            // Optimistically hide all deleted rows from the table
-            setHiddenProjectIds(prev => {
+            setCancellingIds((prev) => {
                 const next = new Set(prev);
-                selectedIds.forEach(id => next.add(id));
+                selectedIds.forEach((id) => next.add(id));
                 return next;
             });
-            showToast({
-                title: "Delete Successful",
-                description: `${selectedIds.length} project${selectedIds.length > 1 ? "s" : ""} have been deleted`,
-                variant: "success",
-                showAction: false,
-            });
-            // Clear selection after successful delete
-            table.resetRowSelection();
-        } catch (error) {
-            console.error("Error deleting projects:", error);
+            setIsCancelling(true);
 
-            showToast({
-                title: "Error Deleting Projects",
-                description: error instanceof Error ? error.message : "An unexpected error occurred",
-                variant: "error",
-                showAction: false,
-            });
-        } finally {
-            setIsDeleting(false);
-            // clear pending delete state for these rows (they may already be hidden)
-            setDeletingRowIds(prev => {
-                const next = new Set(prev);
-                selectedIds.forEach(id => next.delete(id));
-                return next;
-            });
-        }
-    }, [contractsTable, showToast]);
+            try {
+                for (const id of selectedIds) {
+                    const res = await CancelContract({
+                        contractId: id,
+                        reason: "Cancelled from contracts table (bulk)",
+                    });
+                    if (!res.success) {
+                        throw new Error(res.error);
+                    }
+                }
 
-    const selectedRowsCount = contractsTable.getFilteredSelectedRowModel().rows.length
+                showToast({
+                    title: "Contracts cancelled",
+                    description: `${selectedIds.length} contract${
+                        selectedIds.length > 1 ? "s" : ""
+                    } have been cancelled`,
+                    variant: "success",
+                    showAction: false,
+                });
+
+                contractsTable.resetRowSelection();
+            } catch (error) {
+                console.error("Error cancelling contracts:", error);
+                showToast({
+                    title: "Error Cancelling Contracts",
+                    description:
+                        error instanceof Error ? error.message : "An unexpected error occurred",
+                    variant: "error",
+                    showAction: false,
+                });
+            } finally {
+                setIsCancelling(false);
+                setCancellingIds((prev) => {
+                    const next = new Set(prev);
+                    selectedIds.forEach((id) => next.delete(id));
+                    return next;
+                });
+            }
+        },
+        [contractsTable, showToast],
+    );
+
+    const selectedRowsCount =
+        contractsTable.getFilteredSelectedRowModel().rows.length;
 
     return (
         <div className="data-table-container">
@@ -613,31 +617,46 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             <ReusableSheet
                 triggerId={viewTriggerId}
                 trigger={<span className="hidden" />}
-                title={viewProject ? `Viewing ${viewProject.projectName}` : "Viewing Project"}
+                title="Viewing Contract"
                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                formContent={viewProject ? <ViewProjectForm project={viewProject} /> : null}
-                hideFooter={true}
-                hideHeader={true}
+                formContent={
+                    viewContract ? <ViewContractForm contractId={viewContract.id} /> : null
+                }
+                hideFooter
+                hideHeader
                 popupClass="max-w-full"
             />
 
             <DataTable
                 table={contractsTable}
-                emptyTitle="Add Projects"
-                emptyDescription="No projects have been added so far!"
-                emptyContent={
-                    <ReusableSheet
-                        trigger={<Button className="btn-primary"><Plus />New Project</Button>}
-                        title="New Project"
-                        titleIcon={<Archive className="w-5.5 h-5.5" />}
-                        hideHeader={true}
-                        hideFooter={true}
-                        popupClass="max-w-full"
-                        formContent={<AddProjectsForm />}
-                        saveButtonText="Save Project"
-                    />
+                emptyTitle={filteredData.length > 0 ? "Add Contract" : "No Contracts found"}
+                emptyDescription={
+                    filteredData.length > 0
+                        ? "No Contracts have been added so far!"
+                        : "Your search didn't find the contracts you are looking for!"
                 }
-                emptyMedia={<Archive />}
+                emptyContent={
+                    filteredData.length > 0 ? (
+                        <ReusableSheet
+                            trigger={
+                                <Button className="btn-primary">
+                                    <Plus />
+                                    New Contract
+                                </Button>
+                            }
+                            title="New Contract"
+                            titleIcon={<Archive className="w-5.5 h-5.5" />}
+                            hideHeader
+                            hideFooter
+                            popupClass="max-w-full"
+                            formContent={<AddContractForm />}
+                            saveButtonText="Save Contract"
+                        />
+                    ) : (
+                        ""
+                    )
+                }
+                emptyMedia={filteredData.length > 0 ? <Archive /> : <Search />}
                 actionBar={
                     <DataTableActionBar table={contractsTable} className="flex">
                         <Badge variant="outline" className="gap-0 rounded-md px-2 py-1">
@@ -647,41 +666,59 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
                                 aria-label="Clear selection"
                             >
                                 <ReusableTooltip
-                                    trigger={<XIcon size={14} aria-hidden="true" onClick={() => contractsTable.resetRowSelection()} />}
+                                    trigger={
+                                        <XIcon
+                                            size={14}
+                                            aria-hidden="true"
+                                            onClick={() => contractsTable.resetRowSelection()}
+                                        />
+                                    }
                                     tooltip="Clear selection"
                                 />
-                            </button>                        </Badge>
+                            </button>
+                        </Badge>
                         <Separator orientation="vertical" />
                         <ReusableTooltip
-                            trigger={<DownloadIcon onClick={handleDownloadCSV} className="text-gray-700 size-5 rounded p-0.3 cursor-pointer" />}
-                            tooltip={`Export ${selectedRowsCount > 1 ? `${selectedRowsCount} Selected Projects` : "Selected Project" }`}
+                            trigger={
+                                <DownloadIcon
+                                    onClick={handleDownloadCSV}
+                                    className="text-gray-700 size-5 rounded p-0.3 cursor-pointer"
+                                />
+                            }
+                            tooltip={`Export ${
+                                selectedRowsCount > 1
+                                    ? `${selectedRowsCount} Selected Contracts`
+                                    : "Selected Contract"
+                            }`}
                         />
                         <ReusableTooltip
                             trigger={
                                 <ReusablePopover
-                                    trigger={<Trash2Icon className="text-destructive size-5 rounded p-0.3 cursor-pointer" />}
-                                    title="Confirm Delete?"
-                                    description={`Permanently delete ${selectedRowsCount} projects. This action can't be undone`}
+                                    trigger={
+                                        <Trash2Icon className="text-destructive size-5 rounded p-0.3 cursor-pointer" />
+                                    }
+                                    title="Confirm Cancel?"
+                                    description={`Cancel ${selectedRowsCount} contracts. This action can't be undone`}
                                     content={
                                         <Button
-                                            size='sm'
+                                            size="sm"
                                             className="px-2 btn-primary"
-                                            onClick={() => handleDelete()}
-                                            disabled={isDeleting}
+                                            onClick={() => handleBulkCancel()}
+                                            disabled={isCancelling}
                                         >
-                                            {isDeleting ? (
+                                            {isCancelling ? (
                                                 <div className="flex gap-2 items-center">
                                                     Deleting <Loader2 className="animate-spin" />
                                                 </div>
                                             ) : (
-                                                "I'm Sure, Delete!"
+                                                "I'm Sure, Cancel!"
                                             )}
                                         </Button>
                                     }
                                     popoverClass="text-destructive"
                                 />
                             }
-                            tooltip={`Delete ${selectedRowsCount} Selected Projects`}
+                            tooltip={`Cancel ${selectedRowsCount} Selected Contracts`}
                         />
                     </DataTableActionBar>
                 }
@@ -690,4 +727,4 @@ export const ContractsTable = ({ data }: { data: PlotSaleContract[] }) => {
             </DataTable>
         </div>
     );
-}
+};

@@ -3,10 +3,11 @@ import { getPersonalizedGreeting } from "@/lib/greetings";
 import { auth } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import type { SessionClaims } from "@/types/auth";
+import appConfig from "@/lib/app-config";
 
 export const metadata: Metadata = {
     title: {
-        template: "%s | FlowLedger",
+        template: `%s | ${appConfig.appDetails.brand}`,
         default: "Dashboard",
     },
 };
@@ -20,7 +21,7 @@ const DashboardPage = async () => {
     return (
         <section>
             <PageHero
-                type="hero"
+                type="greeting"
                 title={greeting}
                 subtitle="Track and manage your financial obligations at a glance"
                 showButton={false}

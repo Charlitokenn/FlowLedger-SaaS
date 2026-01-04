@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { cn, addSpacesBeforeCapitals } from "@/lib/utils";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { CSVIcon } from "../icons";
 
 

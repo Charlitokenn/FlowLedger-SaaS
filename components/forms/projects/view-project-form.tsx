@@ -4,14 +4,13 @@ import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
 import type {Contact, Plot, Project} from "@/database/tenant-schema"
-import { HandCoins, HouseIcon, Landmark, LandPlot, LandPlotIcon, Text, XIcon } from "lucide-react"
+import { HouseIcon, Landmark, LandPlot, LandPlotIcon, Search, Text, XIcon} from "lucide-react"
 import { useDataTable } from "@/hooks/use-data-table"
 import { DataTable } from "@/components/data-table/data-table"
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
 import { type Column, type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
-import { Skeleton } from "@/components/ui/skeleton"
 import { cn, toProperCase } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs"
@@ -21,6 +20,7 @@ import { DataTableActionBar } from "@/components/data-table/data-table-action-ba
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip"
 import { Separator } from "@/components/ui/separator"
 import { DownloadIcon } from "@/components/icons"
+import {DonutChart} from "@/components/charts/donut-chart";
 
 type PlotWithContact = Plot & { contact?: Contact | null }
 
@@ -307,9 +307,9 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
   return (
     <DataTable
       table={plotsTable}
-      emptyTitle="Add Plots"
-      emptyDescription="No plots have been added so far!"
-      emptyMedia={<LandPlotIcon />}
+      emptyTitle={filteredData.length > 0 ? "Add Plots" : "No Plot found"}
+      emptyDescription={filteredData.length > 0 ? "No Plots have been added so far!" : "Your search didn't find the plots you are looking for!"}
+      emptyMedia={filteredData.length > 0 ? <LandPlotIcon /> : <Search/>}
       actionBar={
         <DataTableActionBar table={plotsTable} className="flex">
           <Badge variant="outline" className="gap-0 rounded-md px-2 py-1">
@@ -343,6 +343,19 @@ const ViewProjectForm = ({ project }: { project: ProjectWithPlots }) => {
   const tabsData: VerticalTabItem[] = React.useMemo(() => {
     const plotsCount = project?.plots?.length ?? 0
 
+    const chartData = [
+      {
+        name: "Sold",
+        value: project.plots?.filter(plot => plot.availability === "SOLD").length,
+        fill: "red"
+      },
+      {
+        name: "Available",
+        value: project.plots?.filter(plot => plot.availability === "AVAILABLE").length,
+        fill: "green"
+      }
+    ];
+
     return [
       {
         value: "tab-1",
@@ -354,6 +367,10 @@ const ViewProjectForm = ({ project }: { project: ProjectWithPlots }) => {
               title={project.projectName}
               subtitle={`Manage all the ${plotsCount} plot${plotsCount === 1 ? "" : "s"}`}
               type="hero"
+            />
+            <DonutChart
+                data={chartData}
+                valueLabel="Project Plots"
             />
           </div>
         ),
@@ -386,16 +403,6 @@ const ViewProjectForm = ({ project }: { project: ProjectWithPlots }) => {
         content: (
           <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
             <PageHero title="Debt Repayments" subtitle="Manage all debt repayments for the project" type="hero" />
-          </div>
-        ),
-      },
-      {
-        value: "tab-4",
-        label: "Income Collected",
-        icon: HandCoins,
-        content: (
-          <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
-            <PageHero title="Income Collected" subtitle="Overview of all income collected" type="hero" />
           </div>
         ),
       },

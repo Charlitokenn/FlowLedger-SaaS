@@ -2,10 +2,10 @@
 
 import { auth } from "@clerk/nextjs/server";
 import crypto from "crypto";
-import { plots, Project, projects, type NewProject } from "@/database/tenant-schema";
+import { projects, type NewProject } from "@/database/tenant-schema";
 import { deleteR2Object, getPresignedGetUrl, uploadPdfToR2 } from "@/lib/r2/r2.server";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
-import { desc, eq, asc, and, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 

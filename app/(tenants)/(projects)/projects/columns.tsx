@@ -5,7 +5,7 @@ import {
     Archive,
     Loader2,
     MoreHorizontal,
-    Plus,
+    Plus, Search,
     SquarePen,
     Text,
     Trash2Icon,
@@ -83,7 +83,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
       setViewProject(next);
     }
   }, [data, viewProject]);
-
+    //TODO - Change to server side rendered data and filtering
     const filteredData = React.useMemo<Project[]>(() => {
         if (!data) return [];
 
@@ -550,9 +550,10 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
 
             <DataTable
                 table={table}
-                emptyTitle="Add Projects"
-                emptyDescription="No projects have been added so far!"
+                emptyTitle={filteredData.length > 0 ? "Add Project" : "No Project found"}
+                emptyDescription={filteredData.length > 0 ? "No Projects have been added so far!" : "Your search didn't find the projects you are looking for!"}
                 emptyContent={
+                    filteredData.length > 0 ?
                     <ReusableSheet
                         trigger={<Button className="btn-primary"><Plus />New Project</Button>}
                         title="New Project"
@@ -562,9 +563,9 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                         popupClass="max-w-full"
                         formContent={<AddProjectsForm />}
                         saveButtonText="Save Project"
-                    />
+                    /> : ""
                 }
-                emptyMedia={<Archive />}
+                emptyMedia={filteredData.length > 0 ? <Archive /> : <Search/>}
                 actionBar={
                     <DataTableActionBar table={table} className="flex">
                         <Badge variant="outline" className="gap-0 rounded-md px-2 py-1">

@@ -5,6 +5,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { FloatingPaths } from '@/components/motion/floating-path'
 
 const AuthLayout = ({
   children,
@@ -39,6 +40,7 @@ const AuthLayout = ({
               {isSignUp ? `${config.appDetails.brand} is an online software designed to help real estate businesses easily manage their finances.` : `${config.appDetails.brand} lets you keep track of your incomes &amp; outcomes without any hassle.`}
             </p>
           </section>
+
 
           {/* Right auth card with layered background */}
           <section className="flex-1 flex justify-center">

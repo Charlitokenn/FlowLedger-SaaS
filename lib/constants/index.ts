@@ -14,11 +14,6 @@ export const SIDEBAR_MENU_ITEMS = {
       icon: ClientsIcon,
     },
     {
-      title: "Clients",
-      url: "/clients",
-      icon: ClientsIcon,
-    },
-    {
       title: "Sales",
       url: "#",
       icon: CartIcon,
@@ -26,10 +21,6 @@ export const SIDEBAR_MENU_ITEMS = {
         {
           title: "Contracts",
           url: "/contracts",
-        },
-        {
-          title: "Daily Sales",
-          url: "/daily-sales",
         },
         {
           title: "Leader Board",
@@ -75,18 +66,8 @@ export const SIDEBAR_MENU_ITEMS = {
     },
     {
       title: "Suppliers",
-      url: "#",
+      url: "/suppliers",
       icon: StoreIcon,
-      items: [
-        {
-          title: "Supplier List",
-          url: "/suppliers",
-        },
-        {
-          title: "Supplier Payments",
-          url: "/supplier-payments",
-        },
-      ],
     },
     {
       title: "Messaging",

@@ -242,14 +242,17 @@ export function DataTableSliderFilter<TData>({
             onValueChange={onSliderValueChange}
           />
         </div>
+        <div className="flex">
         <Button
           aria-label={`Clear ${title} filter`}
           variant="outline"
           size="sm"
           onClick={onReset}
+          className="mt-3"
         >
           Clear
         </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

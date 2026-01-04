@@ -1,23 +1,23 @@
 const config = {
     appDetails: {
-        name: "Land Flow",
-        brand: "LandFlow",
-        supportEmail: "hello@landflow.com",
+        name: "Ardhi Flow",
+        brand: "ArdhiFlow",
+        supportEmail: "hello@ardhiflow.com",
         description: "#1 Real Estate Management Software",
         authorName: "Charles Nkonoki",
-        authorUrl: "https://landflow.com",
+        authorUrl: "https://ardhiflow.com",
         creatorName: "Charles Nkonoki",
         openGraph: {
-            url: "https://landflow.com",
-            title: "Land Flow",
+            url: "https://ardhiflow.com",
+            title: "Ardhi Flow",
             description: "#1 Real Estate Management Software",
-            siteName: "Land Flow",
+            siteName: "Ardhi Flow",
         },
         twitter: {
-            title: "Land Flow",
+            title: "Ardhi Flow",
             description: "#1 Real Estate Management Software",
             images: [`/og.jpg`],
-            creator: "@landflow",
+            creator: "@ardhiflow",
         },
         icon: {
             icon: "/icon.png",

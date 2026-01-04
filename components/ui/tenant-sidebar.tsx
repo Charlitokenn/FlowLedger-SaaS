@@ -24,6 +24,7 @@ import { NavMain } from './nav-main';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { MoonIcon, SunIcon } from '../icons';
+import ClerkOrganizationManager from "@/components/organizationSwitcher";
 
 interface Props {
   userName?: string;
@@ -42,16 +43,20 @@ export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link prefetch={false} href="/dashboard">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <LayoutDashboard className="h-5 w-5" />
-                  {logo && <Image src={logo} alt={`${orgName} logo`} width={32} height={32} />}
+              <div className="cursor-default flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors">
+                { role === "admin"
+                    ? <ClerkOrganizationManager />
+                    : <Image src={logo} alt={`${orgName} logo`} width='44' height='44' className="rounded-sm"/>
+                }
+                <div className="flex flex-col">
+                  <span className="text-md font-semibold leading-none">
+                    {orgName}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {role === "member" ? "Staff" : "Admin"}
+                  </span>
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{orgName}</span>
-                  <span className="truncate text-xs">{role === "member" ? "Staff" : "Admin"} Panel</span>
-                </div>
-              </Link>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

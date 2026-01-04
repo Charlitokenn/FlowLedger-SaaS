@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { getHostnameParts } from './lib/host-utils';
-import type { AuthData, SessionClaims } from './types/auth';
+import type { AuthData } from './types/auth';
 
 const isPublicRoute = createRouteMatcher([
     '/',

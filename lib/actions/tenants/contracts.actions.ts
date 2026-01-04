@@ -11,7 +11,7 @@ import type {
 import { plots, plotSaleContracts } from '@/database/tenant-schema';
 import { requireStaffRole } from '@/lib/authz';
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from '@/lib/tenant-context';
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import {and, desc, eq, isNull, sql} from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -156,6 +156,66 @@ export async function GetContracts(): Promise<ActionResult<ContractListRow[]>> {
           : error instanceof Error
             ? error.message
             : 'Failed to fetch contracts',
+    };
+  }
+}
+
+const UpdateContractSchema = z.object({
+  contractId: z.string().uuid(),
+  cancellationFeePercent: NumericLike.nullable().optional(),
+  graceDays: z.number().int().min(0).max(60).optional(),
+  delinquentDaysThreshold: z.number().int().min(0).max(365).optional(),
+});
+
+export async function UpdateContract(
+  input: z.infer<typeof UpdateContractSchema>,
+): Promise<ActionResult<{ updated: number }>> {
+  try {
+    await requireStaffRole();
+
+    const parsed = UpdateContractSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues.map((i) => i.message).join(', ') };
+    }
+
+    const { db } = await getTenantDbForRequest();
+    const data = parsed.data;
+
+    const updatePayload: Partial<PlotSaleContract> = {};
+
+    if (data.cancellationFeePercent !== undefined) {
+      // allow null to explicitly clear, otherwise set numeric value
+      (updatePayload as any).cancellationFeePercent = data.cancellationFeePercent;
+    }
+    if (data.graceDays !== undefined) {
+      (updatePayload as any).graceDays = data.graceDays;
+    }
+    if (data.delinquentDaysThreshold !== undefined) {
+      (updatePayload as any).delinquentDaysThreshold = data.delinquentDaysThreshold;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return { success: true, data: { updated: 0 } };
+    }
+
+    await db
+      .update(plotSaleContracts)
+      .set(updatePayload as any)
+      .where(eq(plotSaleContracts.id, data.contractId));
+
+    revalidatePath('/contracts');
+    revalidatePath(`/contracts/${data.contractId}`);
+
+    return { success: true, data: { updated: 1 } };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error && error.message === MISSING_TENANT_CONTEXT_ERROR
+          ? 'Unauthorized'
+          : error instanceof Error
+            ? error.message
+            : 'Failed to update contract',
     };
   }
 }

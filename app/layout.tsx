@@ -6,6 +6,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "next-themes";
 import { ToastContextProvider } from "@/components/reusable components/toast-context";
 import config from "@/lib/app-config";
+import appConfig from "@/lib/app-config";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -23,8 +24,8 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | LandFlow",
-    default: "LandFlow",
+    template: `%s | ${appConfig.appDetails.brand}`,
+    default: `${appConfig.appDetails.brand}`,
   },
   description: config.appDetails.description,
   keywords: [
@@ -69,13 +70,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // @ts-ignore
   return (
     <ClerkProvider
       appearance={{
         cssLayerName: 'clerk',
         elements: {
           //Organization Switcher Customization
+          organizationPreviewAvatarBox: "size-11 -ml-2",
+          organizationPreviewAvatarImage: "w-full h-full object-contain",
+          organizationPreview__organizationSwitcherTrigger: "bg-transparent",
+          organizationPreviewTextContainer__organizationSwitcherTrigger: "text-bold text-red-500 hidden",
+          organizationSwitcherTrigger__organization: "hover:bg-transparent",
           organizationSwitcherTrigger: 'dark:text-primary-foreground',
+          organizationSwitcherTriggerIcon: "hidden",
           organizationSwitcherPopoverFooter: "hidden",
           organizationSwitcherPopoverCard: "rounded-xl dark:border-1 dark:border-primary-foreground",
           organizationSwitcherPopoverActions: "dark:bg-secondary dark:text-primary-foreground",
@@ -126,7 +134,6 @@ export default function RootLayout({
 
           userPreviewMainIdentifierText: "dark:text-primary-foreground",
           profileSectionItemList: "dark:text-primary-foreground",
-
         }
       }}
     >

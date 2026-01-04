@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form"
 import InputField from "../fields/input-field"
 import { Button } from "../../ui/button"
 import { useToast } from "../../reusable components/toast-context"
-import CustomToast from "../../reusable components/custom-toast"
 import { useState } from "react"
 
 type ContactFormData = {

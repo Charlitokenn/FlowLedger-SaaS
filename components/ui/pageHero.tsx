@@ -1,8 +1,10 @@
 "use client";
 
 import ReusableSheet from "../reusable components/reusable-sheet";
-import { FilesIcon, Plus } from "lucide-react";
+import {FilesIcon, Moon, Plus, Sun, Sunrise, Sunset} from "lucide-react";
 import ReusableTooltip from "../reusable components/reusable-tooltip";
+import {DayCloudyIcon} from "@/components/icons";
+import React, {JSX} from "react";
 
 type PageHeroProps = {
   title?: string;
@@ -52,12 +54,12 @@ const PageHero = ({
   hideSheetFooter,
   sheetSizeClass,
 }: PageHeroProps) => {
-
   return (
     <div className="flex items-center justify-between gap-4 -mt-3 mb-8">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">
-          {type === "hero" ? title : `Hello`}
+        <h1 className="flex items-center gap-2 text-2xl font-semibold">
+          {type !== "hero" && getTimeBasedIcon()}
+          {title}
         </h1>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
@@ -94,3 +96,27 @@ const PageHero = ({
 };
 
 export default PageHero;
+
+export function getTimeBasedIcon(
+    date: Date = new Date()
+): JSX.Element {
+  const hour = date.getHours();
+
+  // 🌙 Night: 19 → 04
+  if (hour >= 19 || hour < 5) {
+    return <Moon className="size-6" />;
+  }
+
+  // 🌅 Sunrise: 05 → 08
+  if (hour >= 5 && hour < 9) {
+    return <DayCloudyIcon className="size-7" />;
+  }
+
+  // ☀️ Day: 09 → 16
+  if (hour >= 9 && hour < 17) {
+    return <Sun className="size-6" />;
+  }
+
+  // 🌇 Sunset: 17 → 18
+  return <Sunset className="size-7" />;
+}

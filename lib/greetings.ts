@@ -3,6 +3,7 @@
  * @param date - Optional date to check. Defaults to current time.
  * @returns A greeting message appropriate for the time of day
  */
+
 export function getTimeBasedGreeting(date: Date = new Date()): string {
     const hour = date.getHours();
 
