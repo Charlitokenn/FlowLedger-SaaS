@@ -5,15 +5,10 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import {protocol, rootDomain } from "@/lib/utils";
 import type { SessionClaims } from "@/types/auth";
-import {Bell, LucideBellDot, LucideCoins} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 import CountUp from "@/components/motion/count-up";
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
-import ReusablePopover from "@/components/reusable components/reusable-popover";
-import {NotificationsPanel} from "@/components/reusable components/reusable-notification-panel";
 import React from "react";
-import TenantNotifications from "@/components/notifications-button";
-import { Button } from "@/components/ui/button";
 import TenantNotificationsButton from "@/components/notifications-button";
 
 export default async function TenantLayout({

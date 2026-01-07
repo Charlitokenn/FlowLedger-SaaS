@@ -1,4 +1,17 @@
-import { ArchiveIcon, CartIcon, ClientsIcon, CogIcon, HomeIcon, MessageIcon, StoreIcon, WalletIcon } from "@/components/icons";
+import {
+  ArchiveIcon,
+  CartIcon,
+  ClientsIcon,
+  CogIcon,
+  HomeIcon,
+  MessageIcon,
+  StoreIcon,
+  WalletIcon,
+} from "@/components/icons";
+import MpesaIcon from "@/public/m-pesa_logo.png";
+import AirtelIcon from "@/public/airtel_money_logo.png";
+import YasIcon from "@/public/yas_logo.jpg";
+import HalotelIcon from "@/public/halopesa_logo.png";
 
 export const SIDEBAR_MENU_ITEMS = {
   TENANTS_MENU: [
@@ -109,3 +122,17 @@ export const SIDEBAR_MENU_ITEMS = {
     },
   ]
 }
+
+export const PricingTiers = [
+  { minSms: 1, price: 21, name: "Package A" },
+  { minSms: 6000, price: 20, name: "Package B" },
+  { minSms: 55000, price: 19, name: "Package C" },
+  { minSms: 410000, price: 18, name: "Package D" },
+]
+
+export const TelcoOperators = [
+  { id: "mpesa", name: "Mpesa", icon: MpesaIcon },
+  { id: "airtel", name: "Airtel", icon: AirtelIcon },
+  { id: "tigo", name: "Mixx by Yas", icon: YasIcon },
+  { id: "halo", name: "HaloPesa", icon: HalotelIcon },
+]

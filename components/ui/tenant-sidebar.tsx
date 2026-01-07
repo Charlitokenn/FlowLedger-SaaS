@@ -45,7 +45,7 @@ export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
             <SidebarMenuButton size="lg" asChild>
               <div className="cursor-default flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors">
                 { role === "admin"
-                    ? <ClerkOrganizationManager />
+                    ? <ClerkOrganizationManager orgName={orgName}/>
                     : <Image src={logo} alt={`${orgName} logo`} width='44' height='44' className="rounded-sm"/>
                 }
                 <div className="flex flex-col">

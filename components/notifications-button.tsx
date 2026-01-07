@@ -21,10 +21,10 @@ export default function TenantNotificationsButton() {
         {
             id: "2",
             type: "document",
-            title: "Sales Annual Report 2023",
-            description: "Approval needed",
+            title: "Installments Followup",
+            description: "20 installments due today",
             timestamp: "2 hours ago",
-            isNew: false,
+            isNew: true,
         },
         {
             id: "3",
@@ -32,6 +32,7 @@ export default function TenantNotificationsButton() {
             title: "ISO-210",
             description: "Due Tomorrow",
             timestamp: "Yesterday, 2:30 pm",
+            isNew: true,
         },
         {
             id: "4",
@@ -41,6 +42,7 @@ export default function TenantNotificationsButton() {
             timestamp: "Yesterday, 8:00 am",
             avatarUrl: "/man.jpg",
             avatarFallback: "JD",
+            isNew: true,
         },
         {
             id: "5",

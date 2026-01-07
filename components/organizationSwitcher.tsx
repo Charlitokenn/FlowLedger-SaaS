@@ -1,28 +1,26 @@
 "use client"
 
 import {OrganizationSwitcher} from "@clerk/nextjs";
-import {Bell, Coins, Settings, Wallet2} from "lucide-react";
+import {Bell, MessageSquare, MessagesSquare, Settings, Wallet2} from "lucide-react";
 import HorizontalTabs from "@/components/reusable components/reusable-horizontal-tabs";
+import SMSPricingCalculator from "@/components/forms/sms/purchase-form";
+import {MessageIcon} from "@/components/icons";
 
-const ClerkOrganizationManager = () =>{
+const ClerkOrganizationManager = ({ orgName } : { orgName: string | undefined}) =>{
     const tabsData: TabItem[] = [
         {
             value: "tab-1",
+            label: "SMS Purchase",
+            icon: MessagesSquare,
+            content: (<SMSPricingCalculator tenantName={orgName}/>),
+        },
+        {
+            value: "tab-2",
             label: "Subscription",
             icon: Wallet2,
             content: (
                 <p className="p-4 text-center text-xs text-muted-foreground">
                     Content for Tab 1
-                </p>
-            ),
-        },
-        {
-            value: "tab-2",
-            label: "SMS Credits",
-            icon: Coins,
-            content: (
-                <p className="p-4 text-center text-xs text-muted-foreground">
-                    Content for Tab 2
                 </p>
             ),
         },
