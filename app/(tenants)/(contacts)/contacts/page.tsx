@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const ContactsPage = async () => {
   const results = await GetAllContacts();
-
+ console.log(results.data);
   return (
     <section>
       <PageHero

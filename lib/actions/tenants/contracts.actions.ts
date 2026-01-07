@@ -141,8 +141,23 @@ export async function GetContracts(): Promise<ActionResult<ContractListRow[]>> {
     const rows = await db.query.plotSaleContracts.findMany({
       orderBy: (c, { desc }) => [desc(c.createdAt)],
       with: {
-        plot: true,
-        client: true,
+        client: {
+          columns: {
+            fullName: true,
+          },
+        },
+        plot: {
+          columns: {
+            plotNumber: true,
+          },
+          with: {
+            project: {
+                columns: {
+                  projectName: true,
+                }
+            }
+          }
+        },
       },
     });
 

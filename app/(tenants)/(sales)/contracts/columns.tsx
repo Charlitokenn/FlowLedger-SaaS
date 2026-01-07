@@ -270,7 +270,7 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                 enableHiding: false,
             },
             {
-                id: "clientContactId",
+                id: "client",
                 accessorFn: (row) => row.client?.fullName ?? "",
                 header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
                     <DataTableColumnHeader column={column} label="Client Name" />
@@ -285,6 +285,29 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                 meta: {
                     label: "Client Name",
                     placeholder: "Search Client...",
+                    variant: "text",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: true,
+                enableHiding: false,
+            },
+            {
+                id: "plot",
+                accessorFn: (row) => row.plot.project.projectName ?? "",
+                header: ({ column }: { column: Column<ContractListRow, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Project Name" />
+                ),
+                cell: ({ row }) => {
+                    const contract = row.original;
+                    if (cancellingIds.has(contract.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
+                    return <div>{contract.plot.project.projectName ?? ""}</div>;
+                },
+                meta: {
+                    label: "Project Name",
+                    placeholder: "Search Project...",
                     variant: "text",
                     icon: Text,
                     searchable: true,

@@ -12,20 +12,39 @@ export const GetAllContacts = async () => {
   try {
     const { db } = await getTenantDbForRequest();
 
-    const contact = await db.query.contacts.findMany({
+    const contacts = await db.query.contacts.findMany({
       where: (p, { eq }) => eq(p.isDeleted, false),
       orderBy: (p, { desc }) => [desc(p.fullName)],
       with: {
-          plots: true,
-          plotSaleContracts: true,
+        plots: {
+          columns: {
+            plotNumber: true,
+            unsurveyedSize: true,
+            surveyedSize: true,
+            surveyedPlotNumber: true,
+          },
+          with: {
+            project: {
+              columns: {
+                projectName: true,
+              },
+            },
+            activeContract: {
+              with: {
+                payments: true,
+                installments: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!contact) {
+    if (!contacts) {
       return { success: false, error: "Contact not found" };
     }
 
-    return { success: true, data: contact };
+    return { success: true, data: contacts };
   } catch (error) {
     console.error("Error fetching contacts:", error);
     return {

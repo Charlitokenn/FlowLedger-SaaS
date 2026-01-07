@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
 import { formatDate } from "@/lib/format";
-import {cn, toProperCase} from "@/lib/utils";
+import {cn, formatInternationalWithSpaces, toProperCase} from "@/lib/utils";
 import { DataTableActionBar } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -226,7 +226,7 @@ export const ContactsTable = ({ data }: { data: Contact[] }) => {
             if (deletingRowIds.has(contact.id)) {
                 return <Skeleton className="h-6 w-28" />;
             }
-            return <div>{cell.getValue<Contact["mobileNumber"]>()}</div>;
+            return <div>{formatInternationalWithSpaces(cell.getValue<Contact["mobileNumber"]>())}</div>;
         },
         meta: {
             label: "Mobile Number",
@@ -249,7 +249,7 @@ export const ContactsTable = ({ data }: { data: Contact[] }) => {
             if (deletingRowIds.has(contact.id)) {
                 return <Skeleton className="h-6 w-28" />;
             }
-            return <div>{cell.getValue<Contact["altMobileNumber"]>()}</div>;
+            return <div>{formatInternationalWithSpaces(cell.getValue<Contact["altMobileNumber"]>())}</div>;
         },
         meta: {
             label: "Alt Mobile",

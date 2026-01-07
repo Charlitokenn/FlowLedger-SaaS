@@ -13,7 +13,7 @@ export const metadata = {
 
 export default async function ContractsPage() {
   const results = await GetContracts();
-
+console.log(results.data);
     return (
         <section>
             <PageHero

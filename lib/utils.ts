@@ -136,3 +136,27 @@ export const timestampToDateString = (timestamp: string): string => {
   const date = new Date(parseInt(timestamp));
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
+
+export function formatInternationalWithSpaces(
+    input: string
+): string | null {
+  if (!input) return null;
+
+  // Remove everything except digits
+  const digits = input.replace(/\D+/g, "");
+
+  // E.164 max length is 15 digits
+  if (digits.length < 8 || digits.length > 15) return null;
+
+  // Add +
+  const withPlus = `+${digits}`;
+
+  // Validate E.164
+  if (!/^\+[1-9]\d{7,14}$/.test(withPlus)) return null;
+
+  // Add spaces: +CCC XXX XXX XXXX (best-effort)
+  return withPlus.replace(
+      /^\+(\d{1,3})(\d{3})(\d{3})(\d+)$/,
+      "+$1 $2 $3 $4"
+  );
+}
