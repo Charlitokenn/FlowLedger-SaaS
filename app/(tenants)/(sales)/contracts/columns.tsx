@@ -277,6 +277,9 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                 ),
                 cell: ({ row }) => {
                     const contract = row.original;
+                    if (cancellingIds.has(contract.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
                     return <div>{contract.client?.fullName ?? ""}</div>;
                 },
                 meta: {

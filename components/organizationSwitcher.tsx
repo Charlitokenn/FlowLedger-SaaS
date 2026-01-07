@@ -10,7 +10,7 @@ const ClerkOrganizationManager = ({ orgName } : { orgName: string | undefined}) 
     const tabsData: TabItem[] = [
         {
             value: "tab-1",
-            label: "SMS Purchase",
+            label: "SMS Recharge",
             icon: MessagesSquare,
             content: (<SMSPricingCalculator tenantName={orgName}/>),
         },

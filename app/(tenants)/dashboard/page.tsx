@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import type { SessionClaims } from "@/types/auth";
 import appConfig from "@/lib/app-config";
+import {ContractsTableServer} from "@/components/test";
 
 export const metadata: Metadata = {
     title: {

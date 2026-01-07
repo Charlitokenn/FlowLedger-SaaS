@@ -5,6 +5,7 @@ import React, { useState } from "react"
 import ReusablePopover from "@/components/reusable components/reusable-popover";
 import {Bell} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import CountUp from "@/components/motion/count-up";
 
 export default function TenantNotificationsButton() {
     const [notifications, setNotifications] = useState<Notification[]>([
@@ -74,7 +75,7 @@ export default function TenantNotificationsButton() {
                 <Bell className="size-4.5" />
                 {newCount > 0 && (
                     <span className="absolute -top-0 -right-0 flex size-3.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      {newCount}
+                      <CountUp from={0} to={newCount}/>
                     </span>)
                 }
             </Button>

@@ -1,8 +1,10 @@
-import AddContactForm from "@/components/forms/projects/add-contacts-form";
+import AddContactForm from "@/components/forms/contacts/add-contact-form";
 import ContactsCsvBulkUpload from "@/components/forms/projects/projects-bulk-upload";
 import PageHero from "@/components/ui/pageHero";
 import { Metadata } from "next";
 import appConfig from "@/lib/app-config";
+import {ContactsTable} from "@/app/(tenants)/(contacts)/contacts/columns";
+import {GetAllContacts} from "@/lib/actions/tenants/contacts.actions";
 
 export const metadata: Metadata = {
   title: {
@@ -12,19 +14,7 @@ export const metadata: Metadata = {
 };
 
 const ContactsPage = async () => {
-  // TODO: integrate contacts data source and remove placeholder data.
-  const columns = [
-    {
-      id: "fullName",
-      accessorKey: "fullName",
-      header: "Full Name",
-    },
-    {
-      id: "mobileNumber",
-      accessorKey: "mobileNumber",
-      header: "Mobile Number",
-    },
-  ];
+  const results = await GetAllContacts();
 
   return (
     <section>
@@ -37,6 +27,9 @@ const ContactsPage = async () => {
         sheetTitle="New Contact"
         sheetDescription="Fill out the form below to create a new contact."
         sheetContent={<AddContactForm />}
+        sheetSizeClass="max-w-3xl w-full"
+        hideSheetHeader="true"
+        hideSheetFooter="true"
         showBulkUploader
         bulkUploader={<ContactsCsvBulkUpload />}
         bulkUploaderTitle="Bulk upload contacts"
@@ -44,6 +37,7 @@ const ContactsPage = async () => {
         bulkUploaderClass="max-w-5xl w-full"
         hideBulkUploaderFooter
       />
+        <ContactsTable data={results.data ?? []}/>
     </section>
   );
 }

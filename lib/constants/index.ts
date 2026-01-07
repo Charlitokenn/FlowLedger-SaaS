@@ -136,3 +136,18 @@ export const TelcoOperators = [
   { id: "tigo", name: "Mixx by Yas", icon: YasIcon },
   { id: "halo", name: "HaloPesa", icon: HalotelIcon },
 ]
+
+export const RelationshipOptions = [
+  { label: "Parent", value: "PARENT" },
+  { label: "Relative", value: "SIBLING" },
+  { label: "Spouse", value: "SPOUSE" },
+  { label: "Friend", value: "FRIEND" },
+  { label: "Other", value: "OTHER" },
+]
+
+export const IDOptions = [
+  { label: "National ID", value: "NATIONAL_ID" },
+  { label: "Passport", value: "PASSPORT" },
+  { label: "Driver License", value: "DRIVER_LICENSE" },
+  { label: "Voter's ID", value: "VOTER_ID" },
+]

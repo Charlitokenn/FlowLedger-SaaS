@@ -49,7 +49,7 @@ export default async function TenantLayout({
                         </Badge>
                         <ReusableTooltip
                             trigger={
-                                <Badge className="cursor-default border-0 bg-muted-foreground rounded-md dark:text-foreground dark:bg-accent">
+                                <Badge className="hidden cursor-default border-0 bg-muted-foreground rounded-md dark:text-foreground dark:bg-accent">
                                     Credits:
                                     <CountUp
                                         from = {0}
