@@ -41,31 +41,9 @@ import ViewProjectForm from "@/components/forms/projects/view-project-form";
 export const ProjectsTable = ({ data }: { data: Project[] }) => {
     const { showToast } = useToast()
 
-    // Realtime-ish updates:
-    // - Server emits SSE messages when `projects` or `plots` change.
-    // - Client debounces `router.refresh()` so the list stays current without excessive refreshes.
-    // Note: With ~200 project rows, refreshing the route is acceptable and keeps server components as the source of truth.
     const [viewProject, setViewProject] = React.useState<Project | null>(null);
     const viewTriggerId = "projects-view-sheet";
 
-    // Realtime-ish updates:
-    // - Always subscribe to `projects` changes.
-    // - Subscribe to `plots` only when the view sheet is open for a specific project,
-    //   using the SSE `projectId` filter to avoid unnecessary load.
-    const liveSources = React.useMemo(
-      () => [
-        { url: "/api/live/projects" },
-        {
-          url: viewProject?.id
-            ? `/api/live/plots?projectId=${encodeURIComponent(viewProject.id)}`
-            : "/api/live/plots",
-          enabled: !!viewProject?.id,
-        },
-      ],
-      [viewProject?.id],
-    );
-
-    useLiveRefresh(liveSources, { debounceMs: 1200, pauseWhenHidden: true });
     const [projectName] = useQueryState("projectName", parseAsString.withDefault(""));
     const [acquisitionDate] = useQueryState("acquisitionDate", parseAsArrayOf(parseAsString).withDefault([]));
     const [acquisitionValue] = useQueryState("acquisitionValue", parseAsArrayOf(parseAsString).withDefault([]));
@@ -236,6 +214,11 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                     // rawDate can be string | null; formatDate accepts string | number | Date | undefined
                     return <div>{formatDate(rawDate ?? undefined)}</div>;
                 },
+                footer: () => (
+                        <div className="flex items-center gap-1 font-semibold">
+                            Total Amount
+                        </div>
+                ),
                 meta: {
                     label: "Date Filter",
                     placeholder: "Filter Date...",
@@ -270,6 +253,42 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 enableHiding: false,
             },
             {
+                id: "plots",
+                accessorKey: "plots",
+                header: ({ column }: { column: Column<Project, unknown> }) => (
+                    <DataTableColumnHeader column={column} label="Number of Plots" />
+                ),
+                cell: ({ row }) => {
+                    const project = row.original as Project;
+                    if (deletingRowIds.has(project.id)) {
+                        return <Skeleton className="h-6 w-28" />;
+                    }
+                    return <div>{project.plots.length}</div>;
+                },
+                footer: ({ table }) => {
+                    const total = table
+                        .getFilteredRowModel()
+                        .rows.reduce((acc, row) => {
+                            return acc + (row.original.plots.length || 0);
+                        }, 0);
+
+                    return (
+                        <div className="flex items-center gap-1 font-semibold">
+                            {total}
+                        </div>
+                    );
+                },
+                meta: {
+                    label: "Number of Plots",
+                    placeholder: "",
+                    variant: "text",
+                    icon: Text,
+                    searchable: true,
+                },
+                enableColumnFilter: false,
+                enableHiding: false,
+            },
+            {
                 id: "acquisitionValue",
                 accessorKey: "acquisitionValue",
                 header: ({ column }: { column: Column<Project, unknown> }) => (
@@ -293,6 +312,20 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                     return (
                         <div className="flex items-center gap-1">
                             {currencyNumber(numericValue)}
+                        </div>
+                    );
+                },
+                footer: ({ table }) => {
+                    const total = table
+                        .getFilteredRowModel()
+                        .rows.reduce((acc, row) => {
+                            const value = row.original.acquisitionValue;
+                            return acc + (value ? Number(value) : 0);
+                        }, 0);
+
+                    return (
+                        <div className="flex items-center gap-1 font-semibold">
+                            {currencyNumber(total)}
                         </div>
                     );
                 },

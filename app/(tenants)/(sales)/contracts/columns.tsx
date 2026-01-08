@@ -245,6 +245,13 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                         />
                     );
                 },
+                footer: ({ table }) => {
+                    return (
+                        <div className="flex items-center gap-1 font-semibold">
+                            Total Amount
+                        </div>
+                    );
+                },
                 meta: {
                     label: "Status",
                     placeholder: "Filter Status...",
@@ -374,6 +381,20 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                     return (
                         <div className="flex items-center gap-1">
                             {currencyNumber(numericValue)}
+                        </div>
+                    );
+                },
+                footer: ({ table }) => {
+                    const total = table
+                        .getFilteredRowModel()
+                        .rows.reduce((acc, row) => {
+                            const value = row.original.totalContractValue;
+                            return acc + (value ? Number(value) : 0);
+                        }, 0);
+
+                    return (
+                        <div className="flex items-center gap-1 font-semibold">
+                            {currencyNumber(total)}
                         </div>
                     );
                 },
