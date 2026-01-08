@@ -215,19 +215,34 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                 cell: ({ cell }) => {
                     const value = cell.getValue<ContractListRow["status"]>();
 
+                    const STATUS_TOOLTIP: Record<
+                        "ACTIVE" | "COMPLETED" | "DELINQUENT" | "CANCELLED",
+                        string
+                    > = {
+                        ACTIVE: "No overdue installments",
+                        COMPLETED: "Contract is fully paid and completed",
+                        DELINQUENT: "Has overdue installments",
+                        CANCELLED: "Contract was cancelled",
+                    };
+
                     return (
-                        <Badge
-                            className={cn(
-                                "badge w-20 py-0",
-                                value === "CANCELLED"
-                                    ? "bg-destructive"
-                                    : value === "ACTIVE"
-                                        ? "bg-green-600"
-                                        : "",
-                            )}
-                        >
-                            {toProperCase(value)}
-                        </Badge>
+                        <ReusableTooltip
+                            trigger={
+                                <Badge
+                                    className={cn(
+                                        "badge w-20 py-0 cursor-default",
+                                        value === "CANCELLED"
+                                            ? "bg-destructive"
+                                            : value === "ACTIVE" || value === "COMPLETED"
+                                                ? "bg-green-600"
+                                                : "bg-orange-500",
+                                    )}
+                                >
+                                    {toProperCase(value)}
+                                </Badge>
+                            }
+                            tooltip={STATUS_TOOLTIP[value]}
+                        />
                     );
                 },
                 meta: {
