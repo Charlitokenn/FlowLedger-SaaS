@@ -11,7 +11,7 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
 import { type Column, type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
-import { cn, toProperCase } from "@/lib/utils"
+import {cn, currencyNumber, thousandSeparator, toProperCase} from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs"
 import PlotsBulkUpload from "./plots-bulk-upload"
@@ -99,6 +99,11 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
             </Badge>
           );
         },
+        footer: () => (
+            <div className="flex items-center gap-1 font-semibold">
+              Totals
+            </div>
+        ),
         meta: {
           label: "Status",
           placeholder: "Filter Availability...",
@@ -198,6 +203,20 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           // }
           return <div  className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
         },
+        footer: ({ table }) => {
+          const total = table
+              .getFilteredRowModel()
+              .rows.reduce((acc, row) => {
+                const value = row.original.unsurveyedSize;
+                return acc + (value ? Number(value) : 0);
+              }, 0);
+
+          return (
+              <div className="flex items-center justify-center gap-1 font-semibold">
+                Sqm {thousandSeparator(total)}
+              </div>
+          );
+        },
         meta: {
           label: "Plot Size",
           placeholder: "Filter Size...",
@@ -222,6 +241,20 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
           // }
           return <div className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
         },
+        footer: ({ table }) => {
+          const total = table
+              .getFilteredRowModel()
+              .rows.reduce((acc, row) => {
+                const value = row.original.surveyedSize;
+                return acc + (value ? Number(value) : 0);
+              }, 0);
+
+          return (
+              <div className="flex items-center justify-center gap-1 font-semibold">
+                Sqm {thousandSeparator(total)}
+              </div>
+          );
+        },
         meta: {
           label: "Surveyed Plot Size",
           placeholder: "Filter Size...",
@@ -241,7 +274,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
       sorting: [{ id: "plotNumber", desc: false }],
       columnPinning: { right: ["actions"] },
       pagination: {
-        pageSize: 8,
+        pageSize: 7,
         pageIndex: 0,
       },
     },

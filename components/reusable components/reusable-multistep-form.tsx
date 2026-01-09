@@ -30,6 +30,7 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
+import { Spinner } from "../loading/spinner";
 
 // ============================================================================
 // Stepper Components
@@ -810,7 +811,7 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
   }), []);
 
   return (
-    <div className={cn("w-full mx-auto p-2 mt-3 rounded-lg shadow-none", className)}>
+    <div className={cn("w-full mx-auto p-2 mt-3 rounded-lg shadow-none relative", className)}>
       {/* Stepper + Form layout */}
       <div
         className={cn(
@@ -1049,36 +1050,33 @@ export function MultiStepForm<TData extends Record<string, any> = Record<string,
               </div>
 
               {/* Navigation Buttons */}
-              <div className="fixed bottom-0 left-0 right-0 w-full py-4 px-6">
-                <Separator />
-                <div className="flex justify-between pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handlePrevStep}
-                    disabled={currentStep === 0 || !allowNavigateBack}
-                    className={cn(
-                      "flex items-center button",
-                      (currentStep === 0 || !allowNavigateBack) && "invisible"
-                    )}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleSubmit(handleNextStep)}
-                    disabled={isSubmitting}
-                    className="btn-primary"
-                  >
-                    {isLastStep ? (
-                      isSubmitting ? submittingButtonText : submitButtonText
-                    ) : (
-                      <div className="flex items-center">
-                        Next <ArrowRight className="ml-2 h-4 w-4" />
-                      </div>
-                    )}
-                  </Button>
-                </div>
+              <div className="fixed bottom-4 left-8 right-8 flex justify-between pt-4  border-t border-gray-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevStep}
+                  disabled={currentStep === 0 || !allowNavigateBack}
+                  className={cn(
+                    "flex items-center button",
+                    (currentStep === 0 || !allowNavigateBack) && "invisible"
+                  )}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmit(handleNextStep)}
+                  disabled={isSubmitting}
+                  className="btn-primary"
+                >
+                  {isLastStep ? (
+                    isSubmitting ? submittingButtonText : submitButtonText
+                  ) : (
+                    <div className="flex items-center">
+                      Next <ArrowRight className="ml-2 h-4 w-4" />
+                    </div>
+                  )}
+                </Button>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -1183,6 +1181,7 @@ export default function Demo() {
         </div>
       </div>
 
+      //TODO - Fixt too many api bug after form update/submit
       <MultiStepForm
         steps={formSteps}
         onSubmit={(data) => {

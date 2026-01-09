@@ -216,7 +216,7 @@ export const ProjectsTable = ({ data }: { data: Project[] }) => {
                 },
                 footer: () => (
                         <div className="flex items-center gap-1 font-semibold">
-                            Total Amount
+                            Totals
                         </div>
                 ),
                 meta: {

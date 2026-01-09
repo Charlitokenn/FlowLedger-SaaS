@@ -245,13 +245,11 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                         />
                     );
                 },
-                footer: ({ table }) => {
-                    return (
+                footer: () => (
                         <div className="flex items-center gap-1 font-semibold">
                             Total Amount
                         </div>
-                    );
-                },
+                ),
                 meta: {
                     label: "Status",
                     placeholder: "Filter Status...",

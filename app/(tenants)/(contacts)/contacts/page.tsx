@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const ContactsPage = async () => {
   const results = await GetAllContacts();
- console.log(results.data);
+  console.log(results.data)
   return (
     <section>
       <PageHero
@@ -28,8 +28,8 @@ const ContactsPage = async () => {
         sheetDescription="Fill out the form below to create a new contact."
         sheetContent={<AddContactForm />}
         sheetSizeClass="max-w-3xl w-full"
-        hideSheetHeader="true"
-        hideSheetFooter="true"
+        hideSheetHeader={true}
+        hideSheetFooter={true}
         showBulkUploader
         bulkUploader={<ContactsCsvBulkUpload />}
         bulkUploaderTitle="Bulk upload contacts"

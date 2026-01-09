@@ -3,8 +3,8 @@
 import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
-import type {Contact, Plot, Project} from "@/database/tenant-schema"
-import { HouseIcon, Landmark, LandPlot, LandPlotIcon, Search, Text, XIcon} from "lucide-react"
+import {Contact, ContractInstallment, ContractPayment, PlotSaleContract} from "@/database/tenant-schema"
+import {FileText, HouseIcon, Landmark, LandPlot, LandPlotIcon, Search, Text, XIcon} from "lucide-react"
 import { useDataTable } from "@/hooks/use-data-table"
 import { DataTable } from "@/components/data-table/data-table"
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
@@ -20,16 +20,14 @@ import { DataTableActionBar } from "@/components/data-table/data-table-action-ba
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip"
 import { Separator } from "@/components/ui/separator"
 import { DownloadIcon } from "@/components/icons"
-import {DonutChart} from "@/components/charts/donut-chart";
 
 type PlotWithContact = Plot & { contact?: Contact | null }
 
-
-function PlotsTable({ plots }: { plots: Plot[] }) {
+function ContractsTable({ plots }: { plots: Plot[] }) {
     const [status] = useQueryState("availability", parseAsArrayOf(parseAsString).withDefault([]),);
     const [contactId] = useQueryState("contactId", parseAsString.withDefault(""));
 
-    const filteredData = React.useMemo<Plot[]>(() => {
+    const filteredData = React.useMemo<PlotSaleContract[]>(() => {
         if (!plots?.length) return [];
 
         const clientSearch = contactId?.toLowerCase();
@@ -84,8 +82,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                 ),
                 cell: ({ cell, row }) => {
                     const value = cell.getValue<Plot["availability"]>()
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
                     return (
@@ -120,8 +118,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                 cell: ({ cell, row }) => {
                     const plot = row.original
 
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
 
@@ -144,8 +142,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                     <DataTableColumnHeader column={column} label="Plot Number" />
                 ),
                 cell: ({ cell, row }) => {
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
                     return <div>Plot No. {cell.getValue<Plot["plotNumber"]>()}</div>;
@@ -168,8 +166,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                 ),
                 cell: ({ cell, row }) => {
                     const value = cell.getValue<Plot["surveyedPlotNumber"]>()
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
                     return <div>{toProperCase(value)}</div>;
@@ -192,8 +190,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                 ),
                 cell: ({ cell, row }) => {
                     const value = cell.getValue<Plot["unsurveyedSize"]>()
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
                     return <div  className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
@@ -216,8 +214,8 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
                 ),
                 cell: ({ cell, row }) => {
                     const value = cell.getValue<Plot["surveyedSize"]>()
-                    // const project = row.original as Plot;
-                    // if (deletingRowIds.has(project.id)) {
+                    // const contact = row.original as Plot;
+                    // if (deletingRowIds.has(contact.id)) {
                     //   return <Skeleton className="h-6 w-28" />;
                     // }
                     return <div className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
@@ -255,7 +253,7 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
 
         const plots = selectedRows.map(row => row.original);
 
-        // Get all keys from the first project and filter out 'isDeleted'
+        // Get all keys from the first contact and filter out 'isDeleted'
         const headers = Object.keys(plots[0]).filter(key => key !== 'isDeleted');
 
         // Convert rows to CSV format
@@ -336,25 +334,12 @@ function PlotsTable({ plots }: { plots: Plot[] }) {
     )
 }
 //TODO - Add a message/tooltip to be displayed whenever there is no internet connectivity
-type ProjectWithPlots = Project & { plots?: Plot[] }
+type contactWithPlots = contact & { plots?: Plot[] }
 
-const ViewContactForm = ({ project }: { project: ProjectWithPlots }) => {
+const ViewContactForm = ({ contact }: { contact: Contact }) => {
 
     const tabsData: VerticalTabItem[] = React.useMemo(() => {
-        const plotsCount = project?.plots?.length ?? 0
-
-        const chartData = [
-            {
-                name: "Sold",
-                value: project.plots?.filter(plot => plot.availability === "SOLD").length,
-                fill: "red"
-            },
-            {
-                name: "Available",
-                value: project.plots?.filter(plot => plot.availability === "AVAILABLE").length,
-                fill: "green"
-            }
-        ];
+        const plotsCount = contact?.plots?.length ?? 0
 
         return [
             {
@@ -364,50 +349,29 @@ const ViewContactForm = ({ project }: { project: ProjectWithPlots }) => {
                 content: (
                     <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
                         <PageHero
-                            title={project.projectName}
-                            subtitle={`Manage all the ${plotsCount} plot${plotsCount === 1 ? "" : "s"}`}
+                            title={contact.fullName}
+                            subtitle={`Purchased total of ${plotsCount} plot${plotsCount === 1 ? "" : "s"}`}
                             type="hero"
                         />
-                        <DonutChart
-                            data={chartData}
-                            valueLabel="Project Plots"
-                        />
-                    </div>
-                ),
-            },
-            {
-                value: "tab-2",
-                label: "Plots",
-                icon: LandPlot,
-                content: (
-                    <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
-                        <PageHero
-                            title="Plots"
-                            subtitle="Manage all the available and sold plots"
-                            type="hero"
-                            showButton
-                            buttonText="Update Plots"
-                            sheetSizeClass="max-w-2xl"
-                            hideSheetHeader
-                            hideSheetFooter
-                            sheetContent={<PlotsBulkUpload projectId={project.id} />}
-                        />
-                        <div className="mt-4">{<PlotsTable plots={project?.plots ?? []} />}</div>
                     </div>
                 ),
             },
             {
                 value: "tab-3",
-                label: "Debt Repayments",
-                icon: Landmark,
+                label: "Client Statement",
+                icon: FileText,
                 content: (
                     <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
-                        <PageHero title="Debt Repayments" subtitle="Manage all debt repayments for the project" type="hero" />
+                        <PageHero
+                            title="Client Statement"
+                            type="hero"
+                            subtitle=""
+                        />
                     </div>
                 ),
             },
         ]
-    }, [project])
+    }, [contact])
 
     return (
         <div className="mt-8 ml-2">

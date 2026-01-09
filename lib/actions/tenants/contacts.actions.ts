@@ -1,20 +1,48 @@
 "use server";
 
-import {contacts, type NewContact, type NewProject, projects} from "@/database/tenant-schema";
+import {contacts, type NewContact} from "@/database/tenant-schema";
 import { getTenantDbForRequest, MISSING_TENANT_CONTEXT_ERROR } from "@/lib/tenant-context";
 import { revalidatePath } from "next/cache";
-import {inArray} from "drizzle-orm";
+import {inArray, eq} from "drizzle-orm";
 import {auth} from "@clerk/nextjs/server";
-import crypto from "crypto";
-import {uploadPdfToR2} from "@/lib/r2/r2.server";
+import { z } from "zod";
+
+const CreateContactSchema = z.object({
+  fullName: z.string().min(2, "Contact name must be at least 2 characters"),
+  mobileNumber: z.string().min(12, "Enter a valid mobile number"),
+  altMobileNumber: z.string().optional(),
+  email: z.email().optional(),
+  contactType: z.string().min(1, "Select contact type"),
+  gender: z.string(),
+  idType: z.string().optional(),
+  idNumber: z.string().optional(),
+  region: z.string().optional(),
+  district: z.string().optional(),
+  ward: z.string().optional(),
+  street: z.string().optional(),
+  firstNOKName: z.string().optional(),
+  firstNOKMobile: z.string().optional(),
+  firstNOKRelationship: z.string().optional(),
+  secondNOKName: z.string().optional(),
+  secondNOKMobile: z.string().optional(),
+  secondNOKRelationship: z.string().optional(),
+});
+
+type CreateContactInput = z.infer<typeof CreateContactSchema>;
+
+function getString(formData: FormData, key: string): string | undefined {
+  const v = formData.get(key);
+  if (typeof v === "string") return v;
+  return undefined;
+}
 
 export const GetAllContacts = async () => {
   try {
     const { db } = await getTenantDbForRequest();
 
     const contacts = await db.query.contacts.findMany({
-      where: (p, { eq }) => eq(p.isDeleted, false),
-      orderBy: (p, { desc }) => [desc(p.fullName)],
+      where: (contact, { eq }) => eq(contact.isDeleted, false),
+      orderBy: (contact, { desc }) => [desc(contact.fullName)],
       with: {
         plots: {
           columns: {
@@ -29,16 +57,29 @@ export const GetAllContacts = async () => {
                 projectName: true,
               },
             },
+
+            // ✅ active (current) contract
             activeContract: {
               with: {
-                payments: true,
                 installments: true,
+                payments: true,
+                events: true,
+              }
+            },
+
+            // ✅ ALL contracts for this plot
+            contracts: {
+              with: {
+                installments: true,
+                payments: true,
+                events: true,
               },
             },
           },
         },
       },
     });
+
 
     if (!contacts) {
       return { success: false, error: "Contact not found" };
@@ -64,34 +105,33 @@ export async function CreateContact(formData: FormData) {
     const { db } = await getTenantDbForRequest();
     const { userId } = await auth();
 
-    const raw: Partial<CreateProjectInput> = {
-      projectName: getString(formData, "projectName"),
+    const raw: Partial<CreateContactInput> = {
+      // Contact details
+      fullName: getString(formData, "fullName"),
+      mobileNumber: getString(formData, "mobileNumber"),
+      altMobileNumber: getString(formData, "altMobileNumber"),
+      email: getString(formData, "email"),
+      contactType: getString(formData, "contactType"),
+      gender: getString(formData, "gender"),
+      idType: getString(formData, "idType"),
+      idNumber: getString(formData, "idNumber"),
+
+      // Address details
       region: getString(formData, "region"),
       district: getString(formData, "district"),
       ward: getString(formData, "ward"),
       street: getString(formData, "street"),
-      sqmBought: getString(formData, "sqmBought"),
-      numberOfPlots: getString(formData, "numberOfPlots"),
-      projectOwner: getString(formData, "projectOwner"),
 
-      acquisitionDate: getString(formData, "acquisitionDate"),
-      acquisitionValue: getString(formData, "acquisitionValue"),
-      commitmentAmount: getString(formData, "commitmentAmount"),
-      supplierName: getString(formData, "supplierName"),
-
-      tpStatus: getString(formData, "tpStatus"),
-      tpNumber: getString(formData, "tpNumber"),
-      surveyStatus: getString(formData, "surveyStatus"),
-      surveyNumber: getString(formData, "surveyNumber"),
-
-      mwenyekitiName: getString(formData, "mwenyekitiName"),
-      mwenyekitiMobile: getString(formData, "mwenyekitiMobile"),
-      mtendajiName: getString(formData, "mtendajiName"),
-      mtendajiMobile: getString(formData, "mtendajiMobile"),
-      localGovtFee: getString(formData, "localGovtFee"),
+      // Emergency contact details
+      firstNOKName: getString(formData, "firstNOKName"),
+      firstNOKMobile: getString(formData, "firstNOKMobile"),
+      firstNOKRelationship: getString(formData, "firstNOKRelationship"),
+      secondNOKName: getString(formData, "secondNOKName"),
+      secondNOKMobile: getString(formData, "secondNOKMobile"),
+      secondNOKRelationship: getString(formData, "secondNOKRelationship"),
     };
 
-    const parsed = CreateProjectSchema.safeParse(raw);
+    const parsed = CreateContactSchema.safeParse(raw);
     if (!parsed.success) {
       return {
         success: false,
@@ -101,96 +141,36 @@ export async function CreateContact(formData: FormData) {
 
     const input = parsed.data;
 
-    const numberOfPlotsInt = Number.parseInt(input.numberOfPlots, 10);
-    if (!Number.isFinite(numberOfPlotsInt)) {
-      return { success: false, error: "Invalid number of plots" } as const;
-    }
-
-    // Generate an id up-front so we can namespace uploads under the project.
-    const projectId = crypto.randomUUID();
-
-    // Upload docs to a PRIVATE R2 bucket and store only the object keys in the DB.
-    const originalContract = getFile(formData, "originalContract");
-    const tpDocument = getFile(formData, "tpDocument");
-    const surveyDocument = getFile(formData, "surveyDocument");
-
-    const [contractUpload, tpUpload, surveyUpload] = await Promise.all([
-      originalContract
-          ? uploadPdfToR2({
-            file: originalContract,
-            folder: "Contracts",
-            projectId,
-            namePrefix: `${input.projectName}-contract`,
-          })
-          : Promise.resolve(undefined),
-      tpDocument
-          ? uploadPdfToR2({
-            file: tpDocument,
-            folder: "Town plans",
-            projectId,
-            namePrefix: `${input.projectName}-tp`,
-          })
-          : Promise.resolve(undefined),
-      surveyDocument
-          ? uploadPdfToR2({
-            file: surveyDocument,
-            folder: "Survey Plans",
-            projectId,
-            namePrefix: `${input.projectName}-survey`,
-          })
-          : Promise.resolve(undefined),
-    ]);
-
-    // supplier_name is currently a UUID in the schema. If the UI provides a plain name,
-    // store it in projectDetails so it is not lost.
-    const supplierAsUuid = isUuid(input.supplierName) ? input.supplierName : undefined;
-    const supplierNameText = supplierAsUuid ? undefined : input.supplierName;
-
-    const row: NewProject = {
-      id: projectId,
-      projectName: input.projectName,
-      acquisitionDate: toDateOnlyString(input.acquisitionDate),
-      acquisitionValue: input.acquisitionValue,
-
+    const row: NewContact = {
+      fullName: input.fullName,
+      mobileNumber: input.mobileNumber,
+      altMobileNumber: input.altMobileNumber,
+      email: input.email,
+      contactType: input.contactType as any,
+      gender: input.gender as any,
+      idType: input.idType as any,
+      idNumber: input.idNumber,
       region: input.region,
       district: input.district,
       ward: input.ward,
       street: input.street,
-      sqmBought: input.sqmBought,
-      numberOfPlots: numberOfPlotsInt,
-      projectOwner: input.projectOwner,
-
-      committmentAmount: input.commitmentAmount,
-      supplierName: supplierAsUuid,
-      projectDetails: supplierNameText ? `Supplier: ${supplierNameText}` : undefined,
-
-      tpStatus: input.tpStatus,
-      tpNumber: input.tpNumber,
-      surveyStatus: input.surveyStatus,
-      surveyNumber: input.surveyNumber,
-
-      // Store R2 object keys (private). Use presigned URLs when serving to clients.
-      originalContractPdf: contractUpload?.key,
-      tpUrl: tpUpload?.key,
-      surveyUrl: surveyUpload?.key,
-
-      mwenyekitiName: input.mwenyekitiName,
-      mwenyekitiMobile: input.mwenyekitiMobile,
-      mtendajiName: input.mtendajiName,
-      mtendajiMobile: input.mtendajiMobile,
-      lgaFee: input.localGovtFee,
-
+      firstNOKName: input.firstNOKName,
+      firstNOKMobile: input.firstNOKMobile,
+      firstNOKRelationship: input.firstNOKRelationship as any,
+      secondNOKName: input.secondNOKName,
+      secondNOKMobile: input.secondNOKMobile,
+      secondNOKRelationship: input.secondNOKRelationship as any,
       addedBy: userId ?? undefined,
       isDeleted: false,
     };
 
     const inserted = await db.insert(contacts).values(row).returning();
 
-    revalidatePath("/contacts");
+    revalidatePath("/(tenants)/(contacts)");
 
     return { success: true, data: inserted[0] } as const;
   } catch (error) {
-    console.error("CreateProject failed", error);
+    console.error("CreateContact failed", error);
     return {
       success: false,
       error:
@@ -198,7 +178,132 @@ export async function CreateContact(formData: FormData) {
               ? "Unauthorized"
               : error instanceof Error
                   ? error.message
-                  : "Failed to create project",
+                  : "Failed to create contact",
+    } as const;
+  }
+}
+
+export async function UpdateContact(formData: FormData) {
+  try {
+    const { db } = await getTenantDbForRequest();
+
+    const emptyToUndefined = z.preprocess((v) => (v === "" ? undefined : v), z.string().optional());
+
+    const UpdateContactSchema = z.object({
+      contactId: z.uuid(),
+
+      fullName: z.string().min(2).optional(),
+      mobileNumber: z.string().optional(),
+      altMobileNumber: z.string().optional(),
+      email: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
+      contactType: emptyToUndefined,
+      gender: emptyToUndefined,
+      idType: emptyToUndefined,
+      idNumber: z.string().optional(),
+
+      region: z.string().optional(),
+      district: z.string().optional(),
+      ward: z.string().optional(),
+      street: z.string().optional(),
+
+      firstNOKName: z.string().optional(),
+      firstNOKMobile: z.string().optional(),
+      firstNOKRelationship: emptyToUndefined,
+      secondNOKName: z.string().optional(),
+      secondNOKMobile: z.string().optional(),
+      secondNOKRelationship: emptyToUndefined,
+    });
+
+    function getString(formData: FormData, key: string): string | undefined {
+      const v = formData.get(key);
+      if (typeof v === "string") return v;
+      return undefined;
+    }
+
+    const raw: Partial<z.infer<typeof UpdateContactSchema>> = {
+      contactId: getString(formData, "contactId"),
+
+      fullName: getString(formData, "fullName"),
+      mobileNumber: getString(formData, "mobileNumber"),
+      altMobileNumber: getString(formData, "altMobileNumber"),
+      email: getString(formData, "email"),
+      contactType: getString(formData, "contactType"),
+      gender: getString(formData, "gender"),
+      idType: getString(formData, "idType"),
+      idNumber: getString(formData, "idNumber"),
+
+      region: getString(formData, "region"),
+      district: getString(formData, "district"),
+      ward: getString(formData, "ward"),
+      street: getString(formData, "street"),
+
+      firstNOKName: getString(formData, "firstNOKName"),
+      firstNOKMobile: getString(formData, "firstNOKMobile"),
+      firstNOKRelationship: getString(formData, "firstNOKRelationship"),
+      secondNOKName: getString(formData, "secondNOKName"),
+      secondNOKMobile: getString(formData, "secondNOKMobile"),
+      secondNOKRelationship: getString(formData, "secondNOKRelationship"),
+    };
+
+    const parsed = UpdateContactSchema.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues.map((i) => i.message).join(", "),
+      } as const;
+    }
+
+    const input = parsed.data;
+
+    // Fetch existing
+    const existing = await db.select().from(contacts).where(eq(contacts.id, input.contactId)).limit(1);
+    const current = existing[0];
+    if (!current) {
+      return { success: false, error: "Contact not found" } as const;
+    }
+
+    const updated = await db
+      .update(contacts)
+      .set({
+        fullName: input.fullName ?? current.fullName,
+        mobileNumber: input.mobileNumber ?? current.mobileNumber,
+        altMobileNumber: input.altMobileNumber ?? current.altMobileNumber,
+        email: input.email ?? current.email,
+        contactType: (input.contactType as any) ?? current.contactType,
+        gender: (input.gender as any) ?? current.gender,
+        idType: (input.idType as any) ?? current.idType,
+        idNumber: input.idNumber ?? current.idNumber,
+
+        region: input.region ?? current.region,
+        district: input.district ?? current.district,
+        ward: input.ward ?? current.ward,
+        street: input.street ?? current.street,
+
+        firstNOKName: input.firstNOKName ?? current.firstNOKName,
+        firstNOKMobile: input.firstNOKMobile ?? current.firstNOKMobile,
+        firstNOKRelationship: (input.firstNOKRelationship as any) ?? current.firstNOKRelationship,
+        secondNOKName: input.secondNOKName ?? current.secondNOKName,
+        secondNOKMobile: input.secondNOKMobile ?? current.secondNOKMobile,
+        secondNOKRelationship: (input.secondNOKRelationship as any) ?? current.secondNOKRelationship,
+
+        updatedAt: new Date(),
+      })
+      .where(eq(contacts.id, input.contactId))
+      .returning();
+
+    revalidatePath("/contacts");
+
+    return { success: true, data: updated[0] } as const;
+  } catch (error) {
+    console.error("UpdateContact failed", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error && error.message === MISSING_TENANT_CONTEXT_ERROR
+          ? "Unauthorized"
+          : error instanceof Error
+            ? error.message
+            : "Failed to update contact",
     } as const;
   }
 }
@@ -285,5 +390,3 @@ export async function GetContactsForContracts(): Promise<
     };
   }
 }
-
-

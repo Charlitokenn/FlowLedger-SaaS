@@ -23,7 +23,7 @@ export const APPROVAL_STATUS_ENUM = pgEnum('approval_status', ['APPROVED', 'REJE
 export const GENDER_ENUM = pgEnum('gender', ['MALE', 'FEMALE']);
 export const ID_TYPE_ENUM = pgEnum('id_type', ['NATIONAL_ID', 'PASSPORT', 'DRIVER_LICENSE', 'VOTER_ID']);
 export const RELATIONSHIP_ENUM = pgEnum('relationship', ['PARENT', 'SIBLING', 'SPOUSE', 'FRIEND', 'OTHER']);
-export const CONTACT_TYPE = pgEnum('contact_type', ['CLIENT', 'LAND SELLER', 'AUDITOR', 'ICT SUPPORT', 'SURVEYOR']);
+export const CONTACT_TYPE = pgEnum('contact_type', ['CLIENT', 'LAND_SELLER', 'AUDITOR', 'ICT_SUPPORT', 'SURVEYOR']);
 export const ACCOUNT_TYPE = pgEnum('account_type', ['Bank Account', 'Mobile Wallet']);
 
 // NOTE: per requirements, plots are either AVAILABLE or SOLD.

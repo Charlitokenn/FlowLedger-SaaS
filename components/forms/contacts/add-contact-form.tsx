@@ -8,7 +8,7 @@ import { useToast } from "@/components/reusable components/toast-context";
 import { getLocationsDataset } from "@/lib/actions/catalog/location-options.actions";
 import { CreateContact } from "@/lib/actions/tenants/contacts.actions";
 import { useRouter } from "next/navigation";
-import {IDOptions, RelationshipOptions} from "@/lib/constants";
+import {IDOptions, RelationshipOptions, GenderOptions} from "@/lib/constants";
 
 const contactDetailsSchema = z.object({
     fullName: z.string().min(2, "Contact name must be at least 2 characters"),
@@ -37,22 +37,13 @@ const emergencyContactSchema = z.object({
     secondNOKRelationship: z.string().optional(),
 });
 
-const genderOptions = [
-    { label: "Female", value: "FEMALE" },
-    { label: "Male", value: "MALE" },
-] as const;
-
-const idOptions = IDOptions as const;
-
 const contactTypeOptions = [
     { label: "Client", value: "CLIENT" },
-    { label: "Land Seller", value: "LAND SELLER" },
+    { label: "Land Seller", value: "LAND_SELLER" },
     { label: "Auditor", value: "AUDITOR" },
     { label: "Surveyor", value: "SURVEYOR" },
-    { label: "ICT Consultant", value: "ICT CONSULTANT" },
+    { label: "ICT Support", value: "ICT SUPPORT" },
 ] as const;
-
-const relationshipOptions = RelationshipOptions as const;
 
 type LocationsState = {
     regions: FormSelectOption[];
@@ -71,14 +62,14 @@ const stepsBase: FormStep[] = [
             { name: "mobileNumber", label: "Mobile Number", type: "phone", placeholder: "e.g 255712000111" },
             { name: "altMobileNumber", label: "Alt Mobile Number", type: "phone", placeholder: "e.g 255712000111" },
             { name: "email", label: "Email", type: "email", placeholder: "Enter valid email" },
-            { name: "gender", label: "Gender", type: "select", placeholder: "Select gender", options: [...genderOptions] },
-            { name: "idType", label: "ID Type", type: "select", placeholder: "Select ID Type", options: [...idOptions] },
+            { name: "gender", label: "Gender", type: "select", placeholder: "Select gender", options: [...GenderOptions] },
+            { name: "idType", label: "ID Type", type: "select", placeholder: "Select ID Type", options: [...IDOptions] },
             { name: "idNumber", label: "ID Number", type: "text", placeholder: "Enter valid ID Number" },
         ],
         columns: 2
     },
     {
-        id: "address",
+        id: "location",
         title: "Contact's Address",
         description: "",
         schema: locationDetailsSchema,
@@ -98,10 +89,10 @@ const stepsBase: FormStep[] = [
         fields: [
             { name: "firstNOKName", label: "NOK 1: Full Name", type: "text", placeholder: "Full name" },
             { name: "firstNOKMobile", label: "Mobile", type: "phone", placeholder: "e.g. 255712000111" },
-            { name: "firstNOKRelationship", label: "Relationship", type: "select", options: [...relationshipOptions] },
+            { name: "firstNOKRelationship", label: "Relationship", type: "select", options: [...RelationshipOptions] },
             { name: "secondNOKName", label: "NOK 2: Full Name", type: "text", placeholder: "Full name" },
             { name: "secondNOKMobile", label: "Mobile", type: "phone", placeholder: "e.g. 255712000111" },
-            { name: "secondNOKRelationship", label: "Relationship", type: "select", options: [...relationshipOptions] },
+            { name: "secondNOKRelationship", label: "Relationship", type: "select", options: [...RelationshipOptions] },
         ],
         columns: 3
     }
@@ -213,7 +204,7 @@ const AddContactsForm = () => {
         appendIfString("idNumber", data.idNumber);
 
         // Step: Location
-        appendIfDate("regions", data.regions);
+        appendIfString("regions", data.regions);
         appendIfString("district", data.district);
         appendIfString("ward", data.ward);
         appendIfString("street", data.street);
@@ -221,10 +212,10 @@ const AddContactsForm = () => {
         // Step: Emergency
         appendIfString("firstNOKName", data.firstNOKName);
         appendIfString("firstNOKMobile", data.firstNOKMobile);
-        appendIfFile("firstNOKRelationship", data.firstNOKRelationship);
+        appendIfString("firstNOKRelationship", data.firstNOKRelationship);
         appendIfString("secondNOKName", data.secondNOKName);
         appendIfString("secondNOKMobile", data.secondNOKMobile);
-        appendIfFile("secondNOKRelationship", data.secondNOKRelationship);
+        appendIfString("secondNOKRelationship", data.secondNOKRelationship);
 
         const res = await CreateContact(fd);
         if (!res.success) {

@@ -172,7 +172,7 @@ export const ContactsTable = ({ data }: { data: Contact[] }) => {
                         value === "CLIENT" ? "bg-green-600" : "bg-muted-foreground" ,
                     )}
                 >
-                    {toProperCase(value)}
+                    {toProperCase(value.replace("_"," "))}
                 </Badge>
             );
         },
@@ -279,7 +279,7 @@ export const ContactsTable = ({ data }: { data: Contact[] }) => {
                         formContent={<EditContactForm contact={contact} />}
                         hideFooter={true}
                         hideHeader={true}
-                        popupClass="max-w-full"
+                        popupClass="max-w-3xl"
                     />
                     <ReusablePopover
                         triggerId={deleteTriggerId}

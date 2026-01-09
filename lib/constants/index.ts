@@ -151,3 +151,8 @@ export const IDOptions = [
   { label: "Driver License", value: "DRIVER_LICENSE" },
   { label: "Voter's ID", value: "VOTER_ID" },
 ]
+
+export const GenderOptions = [
+  { label: "Female", value: "FEMALE" },
+  { label: "Male", value: "MALE" },
+]
