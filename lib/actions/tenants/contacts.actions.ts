@@ -46,6 +46,7 @@ export const GetAllContacts = async () => {
       with: {
         plots: {
           columns: {
+            id: true,
             plotNumber: true,
             unsurveyedSize: true,
             surveyedSize: true,

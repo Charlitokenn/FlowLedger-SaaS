@@ -5,6 +5,8 @@ import { Metadata } from "next";
 import type { SessionClaims } from "@/types/auth";
 import appConfig from "@/lib/app-config";
 import {ContractsTableServer} from "@/components/test";
+import {ClientStatementDocument} from "@/components/forms/contacts/client-statement-form";
+import {PDFViewer} from "@react-pdf/renderer";
 
 export const metadata: Metadata = {
     title: {

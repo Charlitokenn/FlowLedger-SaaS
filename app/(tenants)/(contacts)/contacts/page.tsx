@@ -5,6 +5,8 @@ import { Metadata } from "next";
 import appConfig from "@/lib/app-config";
 import {ContactsTable} from "@/app/(tenants)/(contacts)/contacts/columns";
 import {GetAllContacts} from "@/lib/actions/tenants/contacts.actions";
+import {auth} from "@clerk/nextjs/server";
+import type {SessionClaims} from "@/types/auth";
 
 export const metadata: Metadata = {
   title: {
@@ -14,8 +16,15 @@ export const metadata: Metadata = {
 };
 
 const ContactsPage = async () => {
+  const { sessionClaims } = await auth();
+  const claims = sessionClaims as SessionClaims | null;
+  const url = claims?.orgLogo as string;
+  const orgName = claims?.orgName as string;
+
+  const tenantBrand = { logo: url, tenantName: orgName }
+
   const results = await GetAllContacts();
-  console.log(results.data)
+  console.log(results.data[4])
   return (
     <section>
       <PageHero
@@ -37,7 +46,7 @@ const ContactsPage = async () => {
         bulkUploaderClass="max-w-5xl w-full"
         hideBulkUploaderFooter
       />
-        <ContactsTable data={results.data ?? []}/>
+        <ContactsTable data={results.data ?? []} extra={tenantBrand}/>
     </section>
   );
 }

@@ -33,6 +33,15 @@ export const getNameInitials = (name: string, count = 2) => {
   return filtered.slice(0, count).toUpperCase();
 };
 
+export function getInitials(name: string) {
+  return name
+      .trim()
+      .split(/\s+/) // Split by one or more whitespace characters
+      .filter(word => word.length > 0) // Remove empty strings
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+}
+
 export const currencyNumber = (
   value: number,
   options?: Intl.NumberFormatOptions

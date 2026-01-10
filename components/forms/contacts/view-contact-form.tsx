@@ -3,345 +3,77 @@
 import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
-import {Contact, ContractInstallment, ContractPayment, PlotSaleContract} from "@/database/tenant-schema"
-import {FileText, HouseIcon, Landmark, LandPlot, LandPlotIcon, Search, Text, XIcon} from "lucide-react"
-import { useDataTable } from "@/hooks/use-data-table"
-import { DataTable } from "@/components/data-table/data-table"
-import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
-import { type Column, type ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
-import { cn, toProperCase } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs"
-// import PlotsBulkUpload from "./plots-bulk-upload"
-import { formatDate } from "@/lib/format"
-import { DataTableActionBar } from "@/components/data-table/data-table-action-bar"
-import ReusableTooltip from "@/components/reusable components/reusable-tooltip"
-import { Separator } from "@/components/ui/separator"
-import { DownloadIcon } from "@/components/icons"
+import {FileText, HouseIcon } from "lucide-react"
+import {formatInternationalWithSpaces, getInitials, thousandSeparator, toProperCase} from "@/lib/utils"
+import { ClientStatementDocument } from "./client-statement-form"
+import { PDFViewer } from "@react-pdf/renderer"
+import ClientContacts from "@/types/globals"
+import { Button } from "@/components/ui/button"
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 
-type PlotWithContact = Plot & { contact?: Contact | null }
-
-function ContractsTable({ plots }: { plots: Plot[] }) {
-    const [status] = useQueryState("availability", parseAsArrayOf(parseAsString).withDefault([]),);
-    const [contactId] = useQueryState("contactId", parseAsString.withDefault(""));
-
-    const filteredData = React.useMemo<PlotSaleContract[]>(() => {
-        if (!plots?.length) return [];
-
-        const clientSearch = contactId?.toLowerCase();
-
-        return plots.filter((plot) => {
-            // Client name filter
-            if (
-                clientSearch &&
-                !plot?.contact?.fullName?.toLowerCase().includes(clientSearch)
-            ) {
-                return false;
-            }
-
-            // Availability multi-select filter
-            return !(status.length > 0 && !status.includes(plot.availability));
-
-        });
-    }, [contactId, status, plots]);
-
-    const columns = React.useMemo<ColumnDef<Plot>[]>(
-        () => [
-            {
-                id: "select",
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && "indeterminate")
-                        }
-                        onCheckedChange={(value) =>
-                            table.toggleAllPageRowsSelected(!!value)
-                        }
-                        aria-label="Select all"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                    />
-                ),
-                size: 32,
-                enableSorting: false,
-                enableHiding: false,
-            },
-            {
-                id: "availability",
-                accessorKey: "availability",
-                header: ({ column }: { column: Column<Plot, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Status" />
-                ),
-                cell: ({ cell, row }) => {
-                    const value = cell.getValue<Plot["availability"]>()
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return (
-                        <Badge
-                            className={cn(
-                                "badge w-18 py-0",
-                                value === "SOLD" ? "bg-destructive" : "bg-green-600",
-                            )}
-                        >
-                            {toProperCase(value)}
-                        </Badge>
-                    );
-                },
-                meta: {
-                    label: "Status",
-                    placeholder: "Filter Availability...",
-                    variant: "multiSelect",
-                    options: [
-                        { label: "Available", value: "AVAILABLE" },
-                        { label: "Sold", value: "SOLD" },
-                    ],
-                },
-                enableColumnFilter: true,
-                enableHiding: false,
-            },
-            {
-                id: "contactId",
-                accessorFn: (row) => row.contact?.fullName ?? "",
-                header: ({ column }: { column: Column<PlotWithContact, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Sold To" />
-                ),
-                cell: ({ cell, row }) => {
-                    const plot = row.original
-
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-
-                    return <div>{plot.contact?.fullName ?? ""}</div>;
-                },
-                meta: {
-                    label: "Client Name",
-                    placeholder: "Search Client...",
-                    variant: "text",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: true,
-                enableHiding: false,
-            },
-            {
-                id: "plotNumber",
-                accessorKey: "plotNumber",
-                header: ({ column }: { column: Column<Plot, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Plot Number" />
-                ),
-                cell: ({ cell, row }) => {
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return <div>Plot No. {cell.getValue<Plot["plotNumber"]>()}</div>;
-                },
-                meta: {
-                    label: "Plot Number",
-                    placeholder: "Search Plot...",
-                    variant: "text",
-                    icon: Text,
-                    searchable: false,
-                },
-                enableColumnFilter: false,
-                enableHiding: false,
-            },
-            {
-                id: "surveyedPlotNumber",
-                accessorKey: "surveyedPlotNumber",
-                header: ({ column }: { column: Column<Plot, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Surveyed Plot Number" />
-                ),
-                cell: ({ cell, row }) => {
-                    const value = cell.getValue<Plot["surveyedPlotNumber"]>()
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return <div>{toProperCase(value)}</div>;
-                },
-                meta: {
-                    label: "Status",
-                    placeholder: "Filter Availability...",
-                    variant: "text",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: false,
-                enableHiding: false,
-            },
-            {
-                id: "unsurveyedSize",
-                accessorKey: "unsurveyedSize",
-                header: ({ column }: { column: Column<Plot, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Unsurveyed Size" />
-                ),
-                cell: ({ cell, row }) => {
-                    const value = cell.getValue<Plot["unsurveyedSize"]>()
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return <div  className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
-                },
-                meta: {
-                    label: "Plot Size",
-                    placeholder: "Filter Size...",
-                    variant: "number",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: false,
-                enableHiding: false,
-            },
-            {
-                id: "surveyedSize",
-                accessorKey: "surveyedSize",
-                header: ({ column }: { column: Column<Plot, unknown> }) => (
-                    <DataTableColumnHeader column={column} label="Surveyed Size" />
-                ),
-                cell: ({ cell, row }) => {
-                    const value = cell.getValue<Plot["surveyedSize"]>()
-                    // const contact = row.original as Plot;
-                    // if (deletingRowIds.has(contact.id)) {
-                    //   return <Skeleton className="h-6 w-28" />;
-                    // }
-                    return <div className="flex justify-center">{value ? `Sqm ${value}` : ""}</div>;
-                },
-                meta: {
-                    label: "Surveyed Plot Size",
-                    placeholder: "Filter Size...",
-                    variant: "number",
-                    icon: Text,
-                    searchable: true,
-                },
-                enableColumnFilter: false,
-                enableHiding: false,
-            },
-        ], [])
-
-    const { table: plotsTable } = useDataTable({
-        data: filteredData,
-        columns,
-        initialState: {
-            sorting: [{ id: "plotNumber", desc: false }],
-            columnPinning: { right: ["actions"] },
-            pagination: {
-                pageSize: 8,
-                pageIndex: 0,
-            },
-        },
-        getRowId: (row) => row.id,
-    });
-
-    const handleDownloadCSV = React.useCallback(() => {
-        const selectedRows = plotsTable.getFilteredSelectedRowModel().rows;
-
-        if (selectedRows.length === 0) return;
-
-        const plots = selectedRows.map(row => row.original);
-
-        // Get all keys from the first contact and filter out 'isDeleted'
-        const headers = Object.keys(plots[0]).filter(key => key !== 'isDeleted');
-
-        // Convert rows to CSV format
-        const csvRows = plots.map(plot => {
-            return headers.map(header => {
-                const value = plot[header as keyof Plot];
-
-                // Handle different data types
-                if (value === null || value === undefined) {
-                    return '';
-                }
-
-                // Format dates if the field contains 'date' or 'Date'
-                if (header.toLowerCase().includes('date') && typeof value === 'string') {
-                    return `"${formatDate(value)}"`;
-                }
-
-                // Escape and quote string values
-                if (typeof value === 'string') {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-
-                // Return numbers and booleans as-is
-                return value;
-            }).join(",");
-        });
-
-        // Combine headers and rows
-        const csvContent = [headers.join(","), ...csvRows].join("\n");
-
-        // Create blob and download
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-
-        link.setAttribute("href", url);
-        link.setAttribute("download", `plots_export_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = "hidden";
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-    }, [plotsTable]);
-
-    const selectedRowsCount = plotsTable.getFilteredSelectedRowModel().rows.length
-
-    return (
-        <DataTable
-            table={plotsTable}
-            emptyTitle={filteredData.length > 0 ? "Add Plots" : "No Plot found"}
-            emptyDescription={filteredData.length > 0 ? "No Plots have been added so far!" : "Your search didn't find the plots you are looking for!"}
-            emptyMedia={filteredData.length > 0 ? <LandPlotIcon /> : <Search/>}
-            actionBar={
-                <DataTableActionBar table={plotsTable} className="flex">
-                    <Badge variant="outline" className="gap-0 rounded-md px-2 py-1">
-                        {selectedRowsCount} Selected
-                        <button
-                            className="-my-[5px] -ms-0.5 -me-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[inherit] p-0 text-foreground/60 transition-[color,box-shadow] outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            aria-label="Clear selection"
-                        >
-                            <ReusableTooltip
-                                trigger={<XIcon size={14} aria-hidden="true" onClick={() => plotsTable.resetRowSelection()} />}
-                                tooltip="Clear selection"
-                            />
-                        </button>                        </Badge>
-                    <Separator orientation="vertical" />
-                    <ReusableTooltip
-                        trigger={<DownloadIcon onClick={handleDownloadCSV} className="text-gray-700 size-5 rounded p-0.3 cursor-pointer" />}
-                        tooltip={`Export ${selectedRowsCount > 1 ? `${selectedRowsCount} Selected Plots` : "Selected Plot" }`}
-                    />
-                </DataTableActionBar>
-            }
-        >
-            <DataTableToolbar table={plotsTable} />
-        </DataTable>
-    )
-}
 //TODO - Add a message/tooltip to be displayed whenever there is no internet connectivity
-type contactWithPlots = contact & { plots?: Plot[] }
 
-const ViewContactForm = ({ contact }: { contact: Contact }) => {
+const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { logo:string, tenantName: string } }) => {
+    const [selectedPlotId, setSelectedPlotId] = React.useState<string>(
+        contact?.plots?.[0]?.id ?? ""
+    );
+    const selectedPlot = contact?.plots?.find(plot => plot.id === selectedPlotId);
+
+    console.log("Selected Plot: ", contact);
 
     const tabsData: VerticalTabItem[] = React.useMemo(() => {
         const plotsCount = contact?.plots?.length ?? 0
+        const hasPlots = plotsCount > 0;
+        const isClient = contact?.contactType === "CLIENT";
 
-        return [
+        const plotSize = selectedPlot?.surveyedSize ? thousandSeparator(Number(selectedPlot?.surveyedSize)) : thousandSeparator(Number(selectedPlot?.unsurveyedSize)) ?? ""
+
+        const duration = (() => {
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+            return contract?.termMonths ?? 0;
+        })();
+
+        const contractValue = (() => {
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+            return contract?.totalContractValue ?? 0;
+        })();
+
+        const pricePerSqm = plotSize ? (Number(contractValue) / Number(plotSize.replace(/,/g, ''))) : 0
+
+        const totalPayments = (() => {
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+            return contract?.payments
+                ?.filter(payment => payment.direction === "IN")
+                .reduce((sum, payment) => sum + parseFloat(payment.amount), 0) ?? 0;
+        })();
+
+        const payments = (()=> {
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+            return contract?.payments?.filter(payment => payment.direction === "IN")
+        })();
+console.log("Payments: ", payments);
+        //Calculate installment basing on purchase plan
+        const installment = (() => {
+            // Try activeContract first, then fall back to the first contract in contracts array
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+
+            if (!contract) return 0;
+
+            const total = Number(contract.totalContractValue);
+            const months = contract.termMonths;
+
+            if (contract.purchasePlan === "FLAT_RATE") {
+                return total / months;
+            }
+
+            if (contract.downpaymentPercent) {
+                return ((1 - contract.downpaymentPercent) * total) / (months - 1);
+            }
+
+            return 0;
+        })();
+
+        const tabs = [
             {
                 value: "tab-1",
                 label: "Overview",
@@ -356,22 +88,75 @@ const ViewContactForm = ({ contact }: { contact: Contact }) => {
                     </div>
                 ),
             },
-            {
-                value: "tab-3",
-                label: "Client Statement",
-                icon: FileText,
-                content: (
-                    <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
-                        <PageHero
-                            title="Client Statement"
-                            type="hero"
-                            subtitle=""
-                        />
-                    </div>
-                ),
-            },
         ]
-    }, [contact])
+
+        if (hasPlots && isClient) {
+            tabs.push(
+                {
+                    value: "tab-2",
+                    label: "Client Statement",
+                    icon: FileText,
+                    content: (
+                        <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
+                            <div className="flex justify-between mb-2">
+                                <Select value={selectedPlotId} onValueChange={setSelectedPlotId}>
+                                    <SelectTrigger className="flex flex-">
+                                        <SelectValue placeholder="Select Plot/Contract" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {contact.plots.map((item) => (
+                                            <SelectItem key={item.id} value={item.id}>
+                                                <span>{item.project.projectName}</span> - Plot No.<span>{item.plotNumber}</span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button variant="outline" className="">Confirmation Letter</Button>
+                            </div>
+                            <PDFViewer width="100%" height={480} showToolbar={false} className="rounded-lg">
+                                <ClientStatementDocument
+                                    companyName={extra.tenantName}
+                                    companySubtitle="We help you invest"
+                                    statementTitle="Taarifa ya Malipo"
+                                    logoUrl={extra.logo}
+                                    referenceNumber={`${getInitials(extra.tenantName)}/${selectedPlot?.project?.projectName.replaceAll(' ', '') ?? ""}/${getInitials(contact.fullName)}/${new Date().toISOString().split('T')[0].replace(/-/g, '')}`}
+                                    billTo={{
+                                        clientName: contact.fullName,
+                                        projectName: selectedPlot?.project.projectName ?? "",
+                                        mobile: formatInternationalWithSpaces(contact.mobileNumber) ?? "",
+                                        region: `${contact.region ?? ""} ${contact.street ?? ''} ${contact.ward ?? ''}`.trim(),
+                                        projectLocation: `${selectedPlot?.project.projectName} - Plot No. ${selectedPlot?.plotNumber}`,
+                                        plotSize: `Sqm ${plotSize}`,
+                                        pricePerSqm: `Tshs. ${thousandSeparator(pricePerSqm)} /Sqm`,
+                                        monthlyInstallment: `Tshs. ${thousandSeparator(installment)}`,
+                                        duration: `${duration}`,
+                                        salesAgent: "John doe",
+                                    }}
+                                    statementDetails={{
+                                        contractValue: `Tshs. ${thousandSeparator(Number(contractValue))}`,
+                                        totalPayments: `Tshs. ${thousandSeparator(totalPayments)}`,
+                                        projectName: selectedPlot?.project?.projectName ?? "",
+                                        accountRep: "",
+                                        accountRepEmail: "",
+                                        currentBalance: `${Number(contractValue)-totalPayments < 0 ? "Tshs. 0" : `Tshs. ${thousandSeparator(Number(contractValue) - totalPayments)}`}`,
+                                    }}
+                                    invoices={payments}
+                                    totals={{ total: selectedPlot?.activeContract?.totalContractValue ?? "" }}
+                                    footerNotes={Number(Number(contractValue)-totalPayments) > Number(contractValue)
+                                        ? "Your have finished making all payments. Thank you for being our esteemed client ."
+                                        : `Your contract balance is Tshs. ${thousandSeparator(Number(contractValue)-totalPayments)}. Please make your payment to cover the balance by the due date.`
+                                    }
+                                />
+                            </PDFViewer>
+                        </div>
+                    ),
+                }
+            )
+        }
+
+        return tabs
+
+    }, [contact, selectedPlotId, selectedPlot])
 
     return (
         <div className="mt-8 ml-2">

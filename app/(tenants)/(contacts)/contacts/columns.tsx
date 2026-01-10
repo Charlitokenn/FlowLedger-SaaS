@@ -37,7 +37,7 @@ import AddContactsForm from "@/components/forms/contacts/add-contact-form";
 import EditContactForm from "@/components/forms/contacts/edit-contact-form";
 import ViewContactForm from "@/components/forms/contacts/view-contact-form";
 
-export const ContactsTable = ({ data }: { data: Contact[] }) => {
+export const ContactsTable = ({ data, extra }: { data: Contact[], extra: { logo: string, tenantName: string } }) => {
     const { showToast: showContactsToast } = useToast()
 
     const [viewContact, setViewContact] = React.useState<Contact | null>(null);
@@ -497,7 +497,7 @@ export const ContactsTable = ({ data }: { data: Contact[] }) => {
                 trigger={<span className="hidden" />}
                 title={viewContact ? `Viewing ${viewContact.fullName}` : "Viewing Contact"}
                 titleIcon={<SquarePen className="w-5.5 h-5.5" />}
-                formContent={viewContact ? <ViewContactForm contact={viewContact} /> : null }
+                formContent={viewContact ? <ViewContactForm contact={viewContact} extra={extra} /> : null }
                 hideFooter={true}
                 hideHeader={true}
                 popupClass="max-w-full"
