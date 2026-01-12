@@ -37,7 +37,7 @@ import AddContactsForm from "@/components/forms/contacts/add-contact-form";
 import EditContactForm from "@/components/forms/contacts/edit-contact-form";
 import ViewContactForm from "@/components/forms/contacts/view-contact-form";
 
-export const ContactsTable = ({ data, extra }: { data: Contact[], extra: { logo: string, tenantName: string } }) => {
+export const ContactsTable = ({ data, extra }: { data: Contact[], extra: { logo: string, tenantName: string, tenantBranding: {slogan: string, email: string, mobile: string, address: string, color: string, website: string } } }) => {
     const { showToast: showContactsToast } = useToast()
 
     const [viewContact, setViewContact] = React.useState<Contact | null>(null);

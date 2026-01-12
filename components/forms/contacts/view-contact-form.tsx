@@ -4,7 +4,7 @@ import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
 import {FileText, HouseIcon } from "lucide-react"
-import {formatInternationalWithSpaces, getInitials, thousandSeparator, toProperCase} from "@/lib/utils"
+import {formatInternationalWithSpaces, getInitials, thousandSeparator } from "@/lib/utils"
 import { ClientStatementDocument } from "./client-statement"
 import { PDFViewer } from "@react-pdf/renderer"
 import ClientContacts from "@/types/globals"
@@ -13,7 +13,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 
 //TODO - Add a message/tooltip to be displayed whenever there is no internet connectivity
 
-const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { logo:string, tenantName: string } }) => {
+const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { logo:string, tenantName: string, tenantBranding: {slogan: string, color: string, mobile: string, email: string, address: string, website: string } } }) => {
     const [selectedPlotId, setSelectedPlotId] = React.useState<string>(
         contact?.plots?.[0]?.id ?? ""
     );
@@ -128,7 +128,7 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
                             <PDFViewer width="100%" height={480} showToolbar={false} className="rounded-lg">
                                 <ClientStatementDocument
                                     companyName={extra.tenantName}
-                                    companySubtitle="We help you invest"
+                                    companySubtitle={extra.tenantBranding.slogan}
                                     statementTitle="Taarifa ya Malipo"
                                     logoUrl={extra.logo}
                                     referenceNumber={`${getInitials(extra.tenantName)}/${selectedPlot?.project?.projectName.replaceAll(' ', '') ?? ""}/${getInitials(contact.fullName)}/${new Date().toISOString().split('T')[0].replace(/-/g, '')}`}
@@ -153,7 +153,12 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
                                         currentBalance: `${Number(contractValue)-totalPayments < 0 ? "Tshs. 0" : `Tshs. ${thousandSeparator(Number(contractValue) - totalPayments)}`}`,
                                     }}
                                     invoices={invoices}
-                                    totals={{ total: selectedPlot?.activeContract?.totalContractValue ?? "" }}
+                                    footer={{
+                                        email: extra.tenantBranding.email,
+                                        address: extra.tenantBranding.address,
+                                        mobile: formatInternationalWithSpaces(extra.tenantBranding.mobile),
+                                        color: extra.tenantBranding.color,
+                                    }}
                                     footerNotes={Number(Number(contractValue)-totalPayments) > Number(contractValue)
                                         ? "Umekamilisha kulipa malipo yote. Asante kwa kuwa mteja wetu wa thamani."
                                         : `Salio la mkataba wako ni Tshs. ${thousandSeparator(Number(contractValue)-totalPayments)}. Tafadhali fanya malipo kulipa kiasi kilichobakia kabla ya mkataba kuisha.`

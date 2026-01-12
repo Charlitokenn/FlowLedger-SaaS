@@ -13,12 +13,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import {
-  LayoutDashboard,
-  Moon,
-  Sun,
-  User,
-} from 'lucide-react';
 import { SIDEBAR_MENU_ITEMS } from '@/lib/constants';
 import { NavMain } from './nav-main';
 import Image from 'next/image';
@@ -31,9 +25,16 @@ interface Props {
   logo?: string;
   orgName?: string;
   role?: string;
+  settingsData?: {
+    slogan: string;
+    mobile: string;
+    email: string;
+    color: string;
+    address: string;
+  }
 }
   
-export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
+export const TenantSidebar = memo(({ logo, orgName, role, settingsData } : Props ) => {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname()
 
@@ -45,7 +46,7 @@ export const TenantSidebar = memo(({logo, orgName, role} : Props ) => {
             <SidebarMenuButton size="lg" asChild>
               <div className="cursor-default flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors">
                 { role === "admin"
-                    ? <ClerkOrganizationManager orgName={orgName}/>
+                    ? <ClerkOrganizationManager orgName={orgName} settingsData={settingsData}/>
                     : <Image src={logo} alt={`${orgName} logo`} width='44' height='44' className="rounded-sm"/>
                 }
                 <div className="flex flex-col">

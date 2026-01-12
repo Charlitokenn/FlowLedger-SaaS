@@ -28,6 +28,15 @@ export const tenants = pgTable('tenants', {
   // Audit fields
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+
+  //Other Settings
+  slogan: text('slogan'),
+  mobile: text('mobile'),
+  email: text('email'),
+  address: text('address'),
+  color: text('color'),
+  senderID: text('sender_id'),
+  website: text('website'),
 });
 
 /**

@@ -1,4 +1,5 @@
 export interface SessionOrgClaims {
+  id: string;
   rol?: string;
   slg?: string;
 }

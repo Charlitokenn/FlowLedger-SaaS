@@ -15,6 +15,27 @@
       "when": 1765527551088,
       "tag": "0001_funny_ultimo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768230373796,
+      "tag": "0002_first_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768230460960,
+      "tag": "0003_good_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768245693014,
+      "tag": "0004_damp_cerise",
+      "breakpoints": true
     }
   ]
 }

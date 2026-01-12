@@ -8,6 +8,8 @@ import { TenantContextProvider } from "@/lib/context-provider";
 import { redirect } from "next/navigation";
 import { protocol, rootDomain } from "@/lib/utils";
 import type { SessionClaims } from "@/types/auth";
+import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
+import React from "react";
 
 export default async function TenantLayout({
     children,
@@ -23,6 +25,7 @@ export default async function TenantLayout({
     }
 
     const isAdmin = claims.o?.rol === 'admin' || claims.o?.rol === 'super_admin';
+    const { data } = await getCurrentTenantFromCatalog();
 
     return (
         <SidebarProvider>
@@ -31,6 +34,7 @@ export default async function TenantLayout({
                 logo={claims.orgLogo}
                 orgName={claims.orgName}
                 role={claims.o?.rol}
+                settingsData={data}
             />
             <SidebarInset>
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background">

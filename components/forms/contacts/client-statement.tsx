@@ -70,8 +70,12 @@ interface ClientStatementProps {
         currentBalance: string
     }
     invoices: InvoiceItem
-    totals: {
-        total: string
+    footer: {
+        email: string,
+        mobile: string | null,
+        address: string,
+        color: string,
+        website: string
     }
     footerNotes?: string
     poweredBy?: string
@@ -358,8 +362,8 @@ export const ClientStatementDocument: React.FC<ClientStatementProps> = ({
                                                                             billTo,
                                                                             statementDetails,
                                                                             invoices,
-                                                                            totals,
-                                                                            footerNotes
+                                                                            footer,
+                                                                            footerNotes,
                                                                         }) => {
     return (
         <Document
@@ -565,9 +569,9 @@ export const ClientStatementDocument: React.FC<ClientStatementProps> = ({
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>{footerNotes}</Text>
                     <Text style={styles.footerBold}>malipo yote yalipwe kwa {companyName}</Text>
-                    <Text style={styles.footerText}>Kwa maswali ya aina yoyote kuhusiana na taarifa hizi za malipo, tafadhali wasiliana idara ya Fedha kwa namba [officalMobile]</Text>
-                    <Text style={styles.footerText}>[address]</Text>
-                    <Text style={styles.footerText}>[Contact Name], [Phone], [Email]</Text>
+                    <Text style={styles.footerText}>Kwa maswali ya aina yoyote kuhusiana na taarifa hizi za malipo, tafadhali wasiliana idara ya Fedha kwa namba {footer.mobile}</Text>
+                    <Text style={styles.footerText}>{footer.address}</Text>
+                    <Text style={styles.footerText}>{footer.website}, {footer.email}</Text>
                 </View>
             </Page>
         </Document>

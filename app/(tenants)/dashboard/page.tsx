@@ -4,10 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import type { SessionClaims } from "@/types/auth";
 import appConfig from "@/lib/app-config";
-import {ContractsTableServer} from "@/components/test";
-import {ClientStatementDocument} from "@/components/forms/contacts/client-statement";
-import {PDFViewer} from "@react-pdf/renderer";
-import CompletionLetter from "@/components/forms/contacts/completion-letter";
+import { SettingsPage } from "@/components/settings-page";
+import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
 
 export const metadata: Metadata = {
     title: {
@@ -30,7 +28,6 @@ const DashboardPage = async () => {
                 subtitle="Track and manage your financial obligations at a glance"
                 showButton={false}
             />
-            <CompletionLetter/>
         </section>
     );
 };

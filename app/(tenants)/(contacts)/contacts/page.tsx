@@ -7,6 +7,7 @@ import {ContactsTable} from "@/app/(tenants)/(contacts)/contacts/columns";
 import {GetAllContacts} from "@/lib/actions/tenants/contacts.actions";
 import {auth} from "@clerk/nextjs/server";
 import type {SessionClaims} from "@/types/auth";
+import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +22,9 @@ const ContactsPage = async () => {
   const url = claims?.orgLogo as string;
   const orgName = claims?.orgName as string;
 
-  const tenantBrand = { logo: url, tenantName: orgName }
+  const { data } = await getCurrentTenantFromCatalog()
+
+  const tenantBrand = { logo: url, tenantName: orgName, tenantBranding: data }
 
   const results = await GetAllContacts();
 
