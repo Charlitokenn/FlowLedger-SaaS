@@ -106,18 +106,12 @@ export const formatDateTime = (isoString: string): string => {
   // .replace(",", ""); // Remove comma after day
 };
 
-export const formatDate = (isoString: string): string => {
-  const date = new Date(isoString);
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-
-  // Use 'en-US' for English month names
-  return new Intl.DateTimeFormat("en-US", options).format(date);
-  // .replace(",", ""); // Remove comma after day
-};
+export function formatDate(date : string) {
+  const d = new Date(date);
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
 
 export function timeUntil(targetDate: string | Date): string {
   const MS_PER_DAY = 86400000; // 1000 * 60 * 60 * 24

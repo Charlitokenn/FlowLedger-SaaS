@@ -81,12 +81,21 @@ export const GetAllContacts = async () => {
       },
     });
 
-
     if (!contacts) {
       return { success: false, error: "Contact not found" };
     }
 
-    return { success: true, data: contacts };
+    // Post-process to add running totals to installments
+    const contactsWithRunningTotals = contacts.map(contact => ({
+      ...contact,
+      plots: contact.plots.map(plot => ({
+        ...plot,
+        activeContract: plot.activeContract ? addRunningTotalToContract(plot.activeContract) : null,
+        contracts: plot.contracts.map(contract => addRunningTotalToContract(contract)),
+      })),
+    }));
+
+    return { success: true, data: contactsWithRunningTotals };
   } catch (error) {
     console.error("Error fetching contacts:", error);
     return {
@@ -100,6 +109,43 @@ export const GetAllContacts = async () => {
     };
   }
 };
+
+// Helper function to add running total (remaining balance) to contract installments
+function addRunningTotalToContract<T extends {
+  installments: any[];
+  payments: any[];
+  totalContractValue: string;
+}>(contract: T) {
+  if (!contract.installments || contract.installments.length === 0) {
+    return contract;
+  }
+
+  // Sort installments by installment number
+  const sortedInstallments = [...contract.installments].sort((a, b) =>
+      a.installmentNo - b.installmentNo
+  );
+
+  const totalContractValue = Number(contract.totalContractValue);
+  let totalPaid = 0;
+
+  const installmentsWithRunningTotal = sortedInstallments.map(installment => {
+    // Add the amount paid for this installment to the running total
+    totalPaid += Number(installment.amountPaid);
+
+    // Running total = remaining balance
+    const runningTotal = totalContractValue - totalPaid;
+
+    return {
+      ...installment,
+      runningTotal: runningTotal.toString(), // Remaining balance after this installment
+    };
+  });
+
+  return {
+    ...contract,
+    installments: installmentsWithRunningTotal,
+  };
+}
 
 export async function CreateContact(formData: FormData) {
   try {

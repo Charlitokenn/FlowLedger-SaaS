@@ -5,7 +5,7 @@ import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/
 import PageHero from "@/components/ui/pageHero"
 import {FileText, HouseIcon } from "lucide-react"
 import {formatInternationalWithSpaces, getInitials, thousandSeparator, toProperCase} from "@/lib/utils"
-import { ClientStatementDocument } from "./client-statement-form"
+import { ClientStatementDocument } from "./client-statement"
 import { PDFViewer } from "@react-pdf/renderer"
 import ClientContacts from "@/types/globals"
 import { Button } from "@/components/ui/button"
@@ -18,8 +18,6 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
         contact?.plots?.[0]?.id ?? ""
     );
     const selectedPlot = contact?.plots?.find(plot => plot.id === selectedPlotId);
-
-    console.log("Selected Plot: ", contact);
 
     const tabsData: VerticalTabItem[] = React.useMemo(() => {
         const plotsCount = contact?.plots?.length ?? 0
@@ -48,10 +46,24 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
         })();
 
         const payments = (()=> {
+            if (selectedPlot?.activeContract && selectedPlot?.contracts?.length > 0) {
+                return [...(selectedPlot.activeContract.payments ?? []), ...(selectedPlot.contracts[0].payments ?? [])];
+            }
+
             const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
             return contract?.payments?.filter(payment => payment.direction === "IN")
         })();
-console.log("Payments: ", payments);
+
+        const installments = (() => {
+            if (selectedPlot?.activeContract && selectedPlot?.contracts?.length > 0) {
+                return [...(selectedPlot.activeContract.installments ?? []), ...(selectedPlot.contracts[0].installments ?? [])];
+            }
+            const contract = selectedPlot?.activeContract ?? selectedPlot?.contracts?.[0];
+            return contract?.installments;
+        })();
+
+        const invoices = { payments: payments, installments: installments }
+
         //Calculate installment basing on purchase plan
         const installment = (() => {
             // Try activeContract first, then fall back to the first contract in contracts array
@@ -140,11 +152,11 @@ console.log("Payments: ", payments);
                                         accountRepEmail: "",
                                         currentBalance: `${Number(contractValue)-totalPayments < 0 ? "Tshs. 0" : `Tshs. ${thousandSeparator(Number(contractValue) - totalPayments)}`}`,
                                     }}
-                                    invoices={payments}
+                                    invoices={invoices}
                                     totals={{ total: selectedPlot?.activeContract?.totalContractValue ?? "" }}
                                     footerNotes={Number(Number(contractValue)-totalPayments) > Number(contractValue)
-                                        ? "Your have finished making all payments. Thank you for being our esteemed client ."
-                                        : `Your contract balance is Tshs. ${thousandSeparator(Number(contractValue)-totalPayments)}. Please make your payment to cover the balance by the due date.`
+                                        ? "Umekamilisha kulipa malipo yote. Asante kwa kuwa mteja wetu wa thamani."
+                                        : `Salio la mkataba wako ni Tshs. ${thousandSeparator(Number(contractValue)-totalPayments)}. Tafadhali fanya malipo kulipa kiasi kilichobakia kabla ya mkataba kuisha.`
                                     }
                                 />
                             </PDFViewer>

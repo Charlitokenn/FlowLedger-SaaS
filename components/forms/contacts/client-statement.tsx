@@ -5,20 +5,41 @@ import {formatDate, thousandSeparator} from "@/lib/utils";
 
 // Register fonts if needed
 Font.register({
-  family: 'Roboto',
-  src: 'https://fonts.gstatic.com/s/roboto/v27/KFOmCnqEu92Fr1Mu4mxP.ttf',
+    family: "Ubuntu",
+    src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCv6KVjbNBYlgoC1CzjvmyI.ttf",
 })
 
+
 interface InvoiceItem {
-    receivedAt: Date
+    payments: PaymentsObjects[],
+    installments: InstallmentsObjects[],
+}
+
+interface PaymentsObjects {
+    id: string
+    contractId: string
+    clientContactId: string
+    direction: string
     amount: number
-    receiptNumber: string
-    description: string
-    rate: string
-    subTotal: string
-    totalFees: string
-    totalSales: string
-    statementBalance: string
+    receivedAt: string
+    method: string
+    reference: string
+    createdBy: string
+    createdAt: string
+}
+
+interface InstallmentsObjects {
+    id: string
+    contractId: string
+    installmentNo: number
+    dueDate: string
+    amountDue: number
+    amountPaid: number
+    status: string
+    paidAt: string
+    createdAt: string
+    updatedAt: string
+    runningTotal: number
 }
 
 interface ClientStatementProps {
@@ -48,7 +69,7 @@ interface ClientStatementProps {
         accountRepEmail: string
         currentBalance: string
     }
-    invoices: InvoiceItem[]
+    invoices: InvoiceItem
     totals: {
         total: string
     }
@@ -66,7 +87,7 @@ const styles = StyleSheet.create({
     page: {
         backgroundColor: "#FFFFFF",
         padding: 30,
-        fontFamily: "Helvetica",
+        fontFamily: "Ubuntu",
         fontSize: 9,
     },
     header: {
@@ -181,7 +202,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#f5f5f5",
         padding: 8,
         flexDirection: "row",
-        justifyContent: "space-between",
     },
     accountItem: {
         flexDirection: "column",
@@ -222,49 +242,50 @@ const styles = StyleSheet.create({
         backgroundColor: "#f9f9f9",
     },
     colPaymentDate: {
-        width: "8%",
+        width: "12%",
         padding: 2,
         fontSize: 7,
     },
     colDetails: {
-        width: "25%",
+        width: "15%",
         padding: 2,
         fontSize: 7,
+        textAlign: "center",
     },
     colReceiptNumber: {
-        width: "7%",
+        width: "9%",
         padding: 2,
         fontSize: 7,
     },
     colPaidAmount: {
-        width: "12%",
+        width: "15%",
         padding: 2,
         fontSize: 7,
-        textAlign: "right",
+        textAlign: "center",
     },
     colInstallmentDate: {
-        width: "12%",
+        width: "13%",
         padding: 2,
         fontSize: 7,
-        textAlign: "right",
+        textAlign: "center",
     },
     colInstallment: {
-        width: "12%",
+        width: "13%",
         padding: 2,
         fontSize: 7,
-        textAlign: "right",
+        textAlign: "center",
     },
     colInstallmentBalance: {
         width: "12%",
         padding: 2,
         fontSize: 7,
-        textAlign: "right",
+        textAlign: "center",
     },
     colContractBalance: {
         width: "12%",
         padding: 2,
         fontSize: 7,
-        textAlign: "right",
+        textAlign: "center",
     },
     subHeader: {
         backgroundColor: "#4a6fa5",
@@ -275,11 +296,11 @@ const styles = StyleSheet.create({
     },
     totalsRow: {
         flexDirection: "row",
-        justifyContent: "flex-end",
+        // justifyContent: "flex-end",
         backgroundColor: "#1e3a5f",
         color: "#FFFFFF",
         padding: 8,
-        marginTop: 5,
+        // marginTop: 5,
     },
     totalsLabel: {
         fontSize: 10,
@@ -452,7 +473,7 @@ export const ClientStatementDocument: React.FC<ClientStatementProps> = ({
                     </View>
 
                     <View style={styles.accountItem}>
-                        <Text style={styles.accountValue}>Orodha Marejesho ya Mkataba</Text>
+                        <Text style={[styles.accountValue,{marginLeft: 130}]}>Orodha Marejesho ya Mkataba</Text>
                     </View>
                 </View>
 
@@ -462,46 +483,89 @@ export const ClientStatementDocument: React.FC<ClientStatementProps> = ({
                     <View style={styles.tableHeader}>
                         <Text style={styles.colPaymentDate}>Tarehe ya Malipo</Text>
                         <Text style={styles.colDetails}>Taarifa ya Muamala</Text>
-                        <Text style={styles.colReceiptNumber}>Risiti Namba</Text>
                         <Text style={styles.colPaidAmount}>Kiasi Kilicholipwa</Text>
                         <Text style={styles.colInstallmentDate}>Tarehe ya Rejesho</Text>
+                        <Text style={styles.colInstallmentDate}>Namba ya Rejesho</Text>
                         <Text style={styles.colInstallment}>Kiasi cha Rejesho</Text>
-                        <Text style={styles.colInstallmentBalance}>Salio la Rejesho</Text>
+                        <Text style={styles.colInstallmentBalance}>Malipo</Text>
                         <Text style={styles.colContractBalance}>Salio la Mkataba</Text>
                     </View>
 
                     {/* Table Rows */}
-                    {invoices.map((invoice, index) => (
-                        <View key={index} style={[styles.tableRow, index % 2 === 1 ? styles.tableRowAlt : {}]}>
-                            <Text style={styles.colPaymentDate}>{formatDate(invoice.receivedAt.toLocaleDateString())}</Text>
-                            <Text style={styles.colDetails}>Malipo ya rejesho</Text>
-                            <Text style={styles.colReceiptNumber}>{invoice.receiptNumber}</Text>
-                            <Text style={styles.colPaidAmount}>{thousandSeparator(invoice.amount)}</Text>
-                            <Text style={styles.colInstallmentDate}>{invoice.rate}</Text>
-                            <Text style={styles.colInstallment}>{invoice.subTotal}</Text>
-                            <Text style={styles.colInstallmentBalance}>{invoice.totalFees}</Text>
-                            <Text style={styles.colContractBalance}>{invoice.totalSales}</Text>
-                        </View>
-                    ))}
+                    {invoices.payments?.length >= invoices.installments?.length ?
+                        invoices.payments.map((payment, index) => (
+                            <View key={index} style={[styles.tableRow, index % 2 === 1 ? styles.tableRowAlt : {}]}>
+                                <Text style={styles.colPaymentDate}>{formatDate(payment.receivedAt)}</Text>
+                                <Text style={styles.colDetails}>
+                                    {index < invoices.installments.length ? "Malipo ya rejesho" : ""}
+                                </Text>
+                                <Text style={styles.colReceiptNumber}>{payment.reference}</Text>
+                                <Text style={[styles.colPaidAmount, { borderRightWidth: 1, borderRightColor: "#ddd" }]}>
+                                    Tshs. {thousandSeparator(payment.amount)}
+                                </Text>
+                                <Text style={styles.colInstallmentDate}>
+                                    {index < invoices.installments.length ? formatDate(invoices.installments[index].dueDate) : ""}
+                                </Text>
+                                <Text style={styles.colInstallment}>
+                                    {index < invoices.installments.length ? `Tshs. ${thousandSeparator(invoices.installments[index].amountDue)}` : ""}
+                                </Text>
+                                <Text style={styles.colInstallmentBalance}>
+                                    {index < invoices.installments.length ? `Tshs. ${thousandSeparator(invoices.installments[index].amountPaid)}` : ""}
+                                </Text>
+                                <Text style={styles.colContractBalance}>
+                                    {index < invoices.installments.length ? `Tshs. ${invoices.installments[index].status}` : ""}
+                                </Text>
+                            </View>
+                        ))
+                        :
+                        invoices.installments.map((installment, index) => (
+                            <View key={index} style={[styles.tableRow, index % 2 === 1 ? styles.tableRowAlt : {}]}>
+                                <Text style={styles.colPaymentDate}>
+                                    {index < invoices.payments.length ? formatDate(invoices.payments[index].receivedAt) : ""}
+                                </Text>
+                                <Text style={styles.colDetails}>
+                                    {index < invoices.payments.length ? "Malipo ya rejesho" : ""}
+                                </Text>
+                                <Text style={[styles.colPaidAmount, {borderRightWidth: 1, borderRightColor: "#ddd"}]}>
+                                    {index < invoices.payments.length ? `Tshs. ${thousandSeparator(invoices.payments[index].amount)}` : ""}
+                                </Text>
+                                <Text style={styles.colInstallmentDate}>
+                                    {formatDate(installment.dueDate)}
+                                </Text>
+                                <Text style={styles.colInstallment}>
+                                    Rejesho Na. {thousandSeparator(installment.installmentNo)}
+                                </Text>
+                                <Text style={styles.colInstallment}>
+                                    Tshs. {thousandSeparator(installment.amountDue)}
+                                </Text>
+                                <Text style={styles.colInstallmentBalance}>
+                                    Tshs. {thousandSeparator(installment.amountPaid)}
+                                </Text>
+                                <Text style={styles.colContractBalance}>
+                                    Tshs. {thousandSeparator(installment.runningTotal)}
+                                </Text>
+                            </View>
+                        ))
+                    }
 
                     {/* Totals Row */}
-                    <View style={styles.totalsRow}>
-                        <Text style={styles.totalsLabel}>Total:</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
-                        <Text style={styles.totalsValue}>{statementDetails.totalPayments}</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
-                        <Text style={styles.totalsValue}>{totals.total}</Text>
+                    <View style={styles.tableHeader}>
+                        <Text style={styles.colPaymentDate}>Jumla:</Text>
+                        <Text style={styles.colDetails}></Text>
+                        <Text style={styles.colPaidAmount}>{statementDetails.totalPayments}</Text>
+                        <Text style={styles.colInstallmentDate}></Text>
+                        <Text style={styles.colInstallmentBalance}></Text>
+                        <Text style={styles.colInstallment}>{statementDetails.contractValue}</Text>
+                        <Text style={styles.colInstallmentBalance}>{statementDetails.totalPayments}</Text>
+                        <Text style={styles.colContractBalance}>{statementDetails.currentBalance}</Text>
                     </View>
                 </View>
 
                 {/* Footer Section */}
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>{footerNotes}</Text>
-                    <Text style={styles.footerBold}>Make all checks payable to {companyName}</Text>
-                    <Text style={styles.footerText}>If you have any questions concerning this statement, please contact us on [officalMobile]</Text>
+                    <Text style={styles.footerBold}>malipo yote yalipwe kwa {companyName}</Text>
+                    <Text style={styles.footerText}>Kwa maswali ya aina yoyote kuhusiana na taarifa hizi za malipo, tafadhali wasiliana idara ya Fedha kwa namba [officalMobile]</Text>
                     <Text style={styles.footerText}>[address]</Text>
                     <Text style={styles.footerText}>[Contact Name], [Phone], [Email]</Text>
                 </View>

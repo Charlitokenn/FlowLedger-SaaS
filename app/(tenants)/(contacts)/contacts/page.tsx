@@ -24,7 +24,7 @@ const ContactsPage = async () => {
   const tenantBrand = { logo: url, tenantName: orgName }
 
   const results = await GetAllContacts();
-  console.log(results.data[4])
+
   return (
     <section>
       <PageHero
