@@ -22,15 +22,16 @@ import ClerkOrganizationManager from "@/components/organizationSwitcher";
 
 interface Props {
   userName?: string;
-  logo?: string;
-  orgName?: string;
+  logo: string;
+  orgName: string;
   role?: string;
-  settingsData?: {
+  settingsData: {
     slogan: string;
     mobile: string;
     email: string;
     color: string;
     address: string;
+    website: string;
   }
 }
   

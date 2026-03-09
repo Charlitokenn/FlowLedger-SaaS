@@ -18,6 +18,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import {cn} from "@/lib/utils";
 
 export function NavMain({
   items, pathname
@@ -102,7 +103,7 @@ export function NavMain({
           }
 
           return (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.title} >
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}

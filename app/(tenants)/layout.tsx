@@ -10,6 +10,7 @@ import CountUp from "@/components/motion/count-up";
 import ReusableTooltip from "@/components/reusable components/reusable-tooltip";
 import React from "react";
 import TenantNotificationsButton from "@/components/notifications-button";
+import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
 
 export default async function TenantLayout({
     children
@@ -23,6 +24,8 @@ export default async function TenantLayout({
         redirect('/sign-in');
     }
 
+    const { data } = await getCurrentTenantFromCatalog()
+
     const gotNotifications = false
 
     return (
@@ -32,6 +35,7 @@ export default async function TenantLayout({
                 logo={claims?.orgLogo as string | undefined}
                 orgName={claims?.orgName as string | undefined}
                 role={(claims?.o as { rol?: string })?.rol as string | undefined}
+                settingsData={data}
             />
             <SidebarInset>
                 <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background">

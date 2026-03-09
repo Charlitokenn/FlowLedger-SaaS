@@ -2,13 +2,13 @@ import type React from "react"
 import {Document, Page, Text, View, Image, StyleSheet, Font} from "@react-pdf/renderer"
 import appConfig from "@/lib/app-config";
 import {formatDate, thousandSeparator} from "@/lib/utils";
+import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
 
 // Register fonts if needed
 Font.register({
     family: "Ubuntu",
     src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCv6KVjbNBYlgoC1CzjvmyI.ttf",
 })
-
 
 interface InvoiceItem {
     payments: PaymentsObjects[],
@@ -81,10 +81,10 @@ interface ClientStatementProps {
     poweredBy?: string
 }
 
+const res = await getCurrentTenantFromCatalog()
+
 const brandColors = {
-    primary: "#1e3a5f",
-    secondary: "#4a6fa5",
-    accent: "#f39c12",
+    primary: !res.data?.color ? "#1e3a5f" : res.data.color,
 }
 
 const styles = StyleSheet.create({
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
         width: "35%",
     },
     infoHeader: {
-        backgroundColor: "#1e3a5f",
+        backgroundColor: brandColors.primary,
         color: "#FFFFFF",
         padding: 5,
         fontSize: 9,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     },
     tableHeader: {
         flexDirection: "row",
-        backgroundColor: "#1e3a5f",
+        backgroundColor: brandColors.primary,
         color: "#FFFFFF",
         padding: 5,
         fontSize: 7,
@@ -322,16 +322,16 @@ const styles = StyleSheet.create({
         borderTopColor: "#ddd",
     },
     footerText: {
-        fontSize: 7,
+        fontSize: 8,
         color: "#666",
         textAlign: "center",
-        marginBottom: 5,
+        marginBottom: 3,
     },
     footerBold: {
-        fontSize: 7,
+        fontSize: 8,
         color: "#333",
         textAlign: "center",
-        fontWeight: "bold",
+        fontWeight: "extrabold",
         marginBottom: 3,
     },
     poweredBy: {
@@ -568,10 +568,10 @@ export const ClientStatementDocument: React.FC<ClientStatementProps> = ({
                 {/* Footer Section */}
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>{footerNotes}</Text>
-                    <Text style={styles.footerBold}>malipo yote yalipwe kwa {companyName}</Text>
-                    <Text style={styles.footerText}>Kwa maswali ya aina yoyote kuhusiana na taarifa hizi za malipo, tafadhali wasiliana idara ya Fedha kwa namba {footer.mobile}</Text>
-                    <Text style={styles.footerText}>{footer.address}</Text>
-                    <Text style={styles.footerText}>{footer.website}, {footer.email}</Text>
+                    <Text style={[styles.footerBold, { marginTop: 6 }]}>Malipo yote yalipwe kwa {companyName}</Text>
+                    <Text style={[styles.footerText, { marginTop: 6 }]}>Kwa maswali ya aina yoyote kuhusiana na taarifa hizi za malipo, tafadhali wasiliana idara ya Fedha kwa namba {footer.mobile}</Text>
+                    <Text style={[styles.footerText, { marginTop: 6 }]}>{footer.address}</Text>
+                    <Text style={[styles.footerText, { marginTop: 6 }]}>{!footer.email ? "" : `Barua Pepe: ${footer.email}`} {!footer.website ? "" : `| Tovuti: ${footer.website}`}</Text>
                 </View>
             </Page>
         </Document>

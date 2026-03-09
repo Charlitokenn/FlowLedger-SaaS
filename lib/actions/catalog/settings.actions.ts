@@ -10,8 +10,8 @@ import {z} from "zod";
 import {zodToProperCase} from "@/lib/zod-transformers";
 
 type GetCurrentTenantResult =
-    | { success: true; data: Tenant }
-    | { success: false; error: string };
+    | { success: true, data: Tenant }
+    | { success: false, error: string };
 
 export async function getCurrentTenantFromCatalog(): Promise<GetCurrentTenantResult> {
     try {
@@ -111,6 +111,7 @@ export async function updateTenantSettings(
             address: parsed.data.address ?? current.address,
             color: parsed.data.color ?? current.color,
             senderID: parsed.data.senderID ?? current.senderID,
+            website: parsed.data.website ?? current.website,
             updatedAt: new Date(),
         };
 

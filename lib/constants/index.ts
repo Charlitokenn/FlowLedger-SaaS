@@ -59,10 +59,6 @@ export const SIDEBAR_MENU_ITEMS = {
           url: "/reminder",
         },
         {
-          title: "Client Statement",
-          url: "/client-statement",
-        },
-        {
           title: "Reconciliation",
           url: "/reconciliation",
         },

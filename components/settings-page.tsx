@@ -20,7 +20,7 @@ import React, {useState} from "react";
 import {updateTenantSettings} from "@/lib/actions/catalog/settings.actions";
 import {Badge} from "@/components/ui/badge";
 import {InputGroup, InputGroupAddon} from "@/components/ui/input-group";
-import {AtSign, MapPin, Megaphone, Link} from "lucide-react";
+import {AtSign, MapPin, Megaphone, Link, Loader2} from "lucide-react";
 
 const settingSchema = z.object({
     slogan: z.string().optional().transform((val) => val ? zodToProperCase(val) : val),
@@ -52,6 +52,18 @@ export function SettingsPage({ initialValues }: SettingsPageProps) {
             website: initialValues?.website ?? "",
         },
     })
+
+    // Keep form values in sync when initialValues change (e.g., on org switch)
+    React.useEffect(() => {
+        form.reset({
+            slogan: initialValues?.slogan ?? "",
+            mobile: initialValues?.mobile ?? "",
+            email: initialValues?.email ?? "",
+            address: initialValues?.address ?? "",
+            color: initialValues?.color ?? "",
+            website: initialValues?.website ?? "",
+        });
+    }, [initialValues, form]);
 
     const onSubmit = async (values: SettingFormValues) => {
         try {
@@ -220,7 +232,7 @@ export function SettingsPage({ initialValues }: SettingsPageProps) {
                     disabled={isSubmitting || !form.formState.isDirty}
                     className="cursor-pointer mt-6"
                 >
-                    {isSubmitting ? "Updating..." : "Update Settings"}
+                    {isSubmitting ? <Loader2 className="animate-spin"/> : "Update Brand"}
                 </Button>
                 <Badge className="bg-red-600">{result.error}</Badge>
             </form>

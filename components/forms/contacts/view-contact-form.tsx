@@ -4,7 +4,7 @@ import * as React from "react"
 import VerticalTabs, { VerticalTabItem } from "@/components/reusable components/reusable-vertical-tabs"
 import PageHero from "@/components/ui/pageHero"
 import {FileText, HouseIcon } from "lucide-react"
-import {formatInternationalWithSpaces, getInitials, thousandSeparator } from "@/lib/utils"
+import {formatInternationalWithSpaces, getInitials, thousandSeparator, toProperCase} from "@/lib/utils"
 import { ClientStatementDocument } from "./client-statement"
 import { PDFViewer } from "@react-pdf/renderer"
 import ClientContacts from "@/types/globals"
@@ -94,7 +94,7 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
                     <div className="rounded border-l-2 border-dashed min-h-[490px] mr-3 pl-6 py-1 mx-3">
                         <PageHero
                             title={contact.fullName}
-                            subtitle={`Purchased total of ${plotsCount} plot${plotsCount === 1 ? "" : "s"}`}
+                            subtitle={`Contact Type: ${toProperCase(contact.contactType?.replace("_", " "))}`}
                             type="hero"
                         />
                     </div>
@@ -158,6 +158,7 @@ const ViewContactForm = ({ contact,extra }: { contact: ClientContact, extra: { l
                                         address: extra.tenantBranding.address,
                                         mobile: formatInternationalWithSpaces(extra.tenantBranding.mobile),
                                         color: extra.tenantBranding.color,
+                                        website: extra.tenantBranding.website,
                                     }}
                                     footerNotes={Number(Number(contractValue)-totalPayments) > Number(contractValue)
                                         ? "Umekamilisha kulipa malipo yote. Asante kwa kuwa mteja wetu wa thamani."

@@ -4,8 +4,6 @@ import { auth } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import type { SessionClaims } from "@/types/auth";
 import appConfig from "@/lib/app-config";
-import { SettingsPage } from "@/components/settings-page";
-import {getCurrentTenantFromCatalog} from "@/lib/actions/catalog/settings.actions";
 
 export const metadata: Metadata = {
     title: {

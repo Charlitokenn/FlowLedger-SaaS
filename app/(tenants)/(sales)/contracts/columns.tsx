@@ -332,7 +332,7 @@ export const ContractsTable = ({ data }: { data: ContractListRow[] }) => {
                     icon: Text,
                     searchable: true,
                 },
-                enableColumnFilter: true,
+                enableColumnFilter: false,
                 enableHiding: false,
             },
             {
